@@ -61,95 +61,90 @@ const App: React.FC = () => {
   const contextAssets = assets.filter(a => selectedIds.has(a.id));
 
   return (
-    <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 overflow-hidden font-sans selection:bg-violet-500/30">
-      {/* 左侧紧凑导航栏 */}
-      <div className="w-16 md:w-20 flex flex-col items-center py-6 md:py-8 border-r border-zinc-900 bg-black/40 flex-shrink-0">
-        <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center mb-8 md:mb-12 shadow-2xl shadow-violet-500/30 border border-violet-400/20">
-          <i className="fas fa-film text-lg md:text-xl text-white"></i>
+    <div className="flex h-screen w-screen bg-[#09080c] text-zinc-100 overflow-hidden font-sans selection:bg-purple-500/30">
+      {/* 左侧极致胶囊导航 */}
+      <div className="w-20 flex flex-col items-center py-8 flex-shrink-0 z-50">
+        <div className="w-12 h-12 rounded-[1.5rem] bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center mb-10 shadow-lg shadow-purple-500/20 ring-4 ring-purple-500/10">
+          <i className="fas fa-magic text-xl text-white"></i>
         </div>
         
-        <nav className="flex flex-col gap-6 md:gap-8 flex-1">
+        <nav className="flex flex-col gap-6 flex-1">
           {[
-            { id: 'all', icon: 'fa-layer-group', tip: '全部资产' },
-            { id: 'characters', icon: 'fa-id-badge', tip: '角色原型' },
-            { id: 'scenes', icon: 'fa-mountain-sun', tip: '场景设定' },
-            { id: 'shots', icon: 'fa-clapperboard', tip: '视觉镜头' }
+            { id: 'all', icon: 'fa-shapes', tip: '全部' },
+            { id: 'characters', icon: 'fa-user-circle', tip: '角色' },
+            { id: 'scenes', icon: 'fa-compass', tip: '场景' },
+            { id: 'shots', icon: 'fa-film', tip: '镜头' }
           ].map(tab => (
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`group relative w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300 ${
+              className={`group relative w-12 h-12 rounded-[1.2rem] flex items-center justify-center transition-all duration-300 ${
                 activeTab === tab.id 
-                ? 'bg-violet-600/20 text-violet-400' 
-                : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-900'
+                ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 shadow-xl shadow-purple-500/10' 
+                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
               }`}
             >
-              <i className={`fas ${tab.icon} text-base md:text-lg`}></i>
-              <div className="absolute left-16 opacity-0 group-hover:opacity-100 bg-zinc-800 text-white text-[10px] px-2 py-1 rounded pointer-events-none transition-opacity whitespace-nowrap z-50 hidden md:block">
+              <i className={`fas ${tab.icon} text-lg`}></i>
+              <div className="absolute left-16 opacity-0 group-hover:opacity-100 bg-zinc-800 text-white text-[10px] px-2 py-1 rounded-lg pointer-events-none transition-opacity whitespace-nowrap z-50">
                 {tab.tip}
               </div>
             </button>
           ))}
         </nav>
 
-        <div className="flex flex-col gap-4 md:gap-6">
+        <div className="flex flex-col gap-6">
           {!isVeoAuthorized && (
              <button 
               onClick={handleOpenKey}
-              className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all border border-amber-500/30"
+              className="w-12 h-12 rounded-full flex items-center justify-center bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all border border-purple-500/20"
+              title="激活高级引擎"
             >
               <i className="fas fa-bolt"></i>
             </button>
           )}
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-zinc-300 cursor-pointer">
-             <i className="fas fa-cog text-sm"></i>
+          <div className="w-12 h-12 rounded-full bg-zinc-900/50 flex items-center justify-center text-zinc-500 hover:text-zinc-300 cursor-pointer border border-white/5">
+             <i className="fas fa-fingerprint"></i>
           </div>
         </div>
       </div>
 
       {/* 中央主画布 */}
       <div className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
-        {/* 自适应 Header */}
-        <header className="h-20 px-4 md:px-10 flex items-center justify-between bg-black/20 backdrop-blur-xl border-b border-zinc-900/50 z-20 shrink-0">
-          <div className="flex items-center gap-4 min-w-0 mr-4">
-            <div className="flex flex-col min-w-0">
-              <h1 className="text-[10px] font-black tracking-[0.3em] text-zinc-600 uppercase truncate">Production Workspace</h1>
-              <div className="flex items-center gap-2 mt-0.5 min-w-0">
-                <span className="text-base md:text-lg font-bold text-white truncate">霓虹阴影：核心剧本</span>
-                <span className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[9px] text-zinc-500 font-mono shrink-0">V.04</span>
-              </div>
+        {/* 胶囊 Header - 参考图中设计 */}
+        <div className="h-24 px-8 flex items-center justify-center shrink-0 z-20">
+          <header className="w-full max-w-5xl h-14 px-6 flex items-center justify-between bg-[#1a181f]/60 backdrop-blur-2xl border border-white/10 rounded-full shadow-2xl shadow-black/40">
+            <div className="flex items-center gap-4 min-w-0">
+               <div className="flex items-center gap-2 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
+                 <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
+                 <span className="text-[10px] font-bold text-purple-200 tracking-wider">PROJECT: NEON_SOUL</span>
+               </div>
+               <div className="h-4 w-px bg-white/10"></div>
+               <h1 className="text-sm font-medium text-zinc-300 truncate">Lovart.ai / Canvas / Draft_04</h1>
             </div>
-          </div>
 
-          <div className="flex items-center gap-3 md:gap-6 shrink-0">
-             <div className="hidden sm:flex items-center gap-3 bg-zinc-900/40 border border-white/5 rounded-2xl px-3 py-2">
-                <div className="flex -space-x-1.5 shrink-0">
-                   <div className="w-5 h-5 rounded-full bg-violet-600 border border-black text-[8px] flex items-center justify-center font-black">G</div>
-                   <div className="w-5 h-5 rounded-full bg-fuchsia-600 border border-black text-[8px] flex items-center justify-center font-black">V</div>
-                </div>
-                <div className="h-3 w-px bg-zinc-800 hidden md:block"></div>
-                <div className="items-center gap-2 hidden md:flex">
-                   <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                   <span className="text-[9px] font-bold text-zinc-400 uppercase whitespace-nowrap">Dual Engine Active</span>
-                </div>
-             </div>
-             <button className="h-9 px-4 md:px-6 bg-white text-black text-[10px] font-black uppercase tracking-[0.1em] rounded-xl hover:bg-zinc-200 transition-all shadow-xl shadow-white/5 whitespace-nowrap">
-                Export
-             </button>
-          </div>
-        </header>
+            <div className="flex items-center gap-4">
+               <div className="hidden md:flex items-center -space-x-2">
+                  <div className="w-7 h-7 rounded-full bg-indigo-500 border-2 border-[#1a181f] flex items-center justify-center text-[10px] font-bold">G</div>
+                  <div className="w-7 h-7 rounded-full bg-purple-500 border-2 border-[#1a181f] flex items-center justify-center text-[10px] font-bold">V</div>
+               </div>
+               <button className="h-8 px-5 bg-[#e9d5ff] text-[#581c87] text-[10px] font-black uppercase tracking-widest rounded-full hover:brightness-110 transition-all shadow-lg shadow-purple-500/20">
+                  Export
+               </button>
+            </div>
+          </header>
+        </div>
 
         {/* 画布主内容 */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-10 bg-[radial-gradient(circle_at_20%_20%,_rgba(139,92,246,0.02)_0%,_transparent_50%)] bg-zinc-950">
+        <main className="flex-1 overflow-y-auto p-8 pt-0 bg-transparent">
           {assets.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center opacity-40 p-6">
-              <div className="w-16 h-16 md:w-24 md:h-24 rounded-full border border-zinc-800 flex items-center justify-center text-2xl md:text-3xl mb-6">
+            <div className="h-full flex flex-col items-center justify-center text-center p-6">
+              <div className="w-20 h-20 rounded-full bg-purple-500/5 border border-purple-500/20 flex items-center justify-center text-2xl text-purple-500/30 mb-6 backdrop-blur-sm">
                 <i className="fas fa-plus"></i>
               </div>
-              <p className="text-sm font-light tracking-wide max-w-xs">画布为空。在右侧 Assistant 对话框中输入您的创作灵感。</p>
+              <p className="text-sm text-zinc-500 font-light tracking-widest">AWAITING CINEMATIC INPUT...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
               {filteredAssets.map(asset => (
                 <AssetCard 
                   key={asset.id} 
@@ -163,20 +158,20 @@ const App: React.FC = () => {
           )}
         </main>
         
-        {/* 上下文提示条 */}
+        {/* 柔和胶囊上下文提示条 */}
         {selectedIds.size > 0 && (
-          <div className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 flex items-center bg-zinc-900/95 backdrop-blur-2xl border border-violet-500/40 rounded-full px-4 md:px-6 py-2.5 md:py-3 shadow-2xl z-30 animate-in slide-in-from-bottom-10 whitespace-nowrap">
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="w-4 h-4 md:w-5 md:h-5 rounded-full bg-violet-600 flex items-center justify-center text-[8px] md:text-[10px] font-bold">{selectedIds.size}</div>
-              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-violet-100">Context Active</span>
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center bg-purple-900/40 backdrop-blur-3xl border border-purple-400/30 rounded-full px-6 py-3 shadow-[0_20px_50px_rgba(139,92,246,0.3)] z-30 animate-in slide-in-from-bottom-5">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full bg-purple-400 text-[#2e1065] flex items-center justify-center text-[10px] font-black">{selectedIds.size}</div>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-100">Selection Active</span>
             </div>
-            <div className="w-px h-3 md:h-4 bg-zinc-800 mx-3 md:mx-4"></div>
-            <button onClick={() => setSelectedIds(new Set())} className="text-[9px] md:text-[10px] font-bold text-zinc-500 hover:text-white uppercase transition-colors">Clear</button>
+            <div className="w-px h-4 bg-purple-400/30 mx-6"></div>
+            <button onClick={() => setSelectedIds(new Set())} className="text-[10px] font-bold text-purple-300 hover:text-white uppercase transition-colors">Dismiss</button>
           </div>
         )}
       </div>
 
-      {/* 右侧 Agent 边栏 - 自适应宽度 */}
+      {/* 右侧 Agent 边栏 */}
       <AgentSidebar 
         contextAssets={contextAssets} 
         onAddAsset={addAsset}

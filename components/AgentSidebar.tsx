@@ -19,7 +19,7 @@ interface AgentSidebarProps {
 
 const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }) => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: '您好，导演。准备好开始创作了吗？您可以直接告诉我您的构思，或者让我基于选中的资产进行扩展。' }
+    { role: 'assistant', content: '您好，导演。电影宇宙已就绪，请输入您的构思。' }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -44,7 +44,7 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
         for (const call of response.functionCalls) {
           setMessages(prev => [...prev, { 
             role: 'assistant', 
-            content: `正在执行任务...`, 
+            content: `正在编织时空...`, 
             type: 'tool_call', 
             toolName: call.name 
           }]);
@@ -67,7 +67,7 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
               id: Math.random().toString(36).substr(2, 9),
               type: 'video',
               content: previewData,
-              title: '动态镜头',
+              title: '动态分镜',
               createdAt: Date.now()
             };
           } else if (call.name === 'write_story_asset') {
@@ -85,7 +85,7 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
             onAddAsset(resultAsset);
             setMessages(prev => [...prev, { 
               role: 'assistant', 
-              content: `已成功生成并添加至工作区。`, 
+              content: `资产已同步至您的创作画布。`, 
               type: 'tool_result',
               preview: previewData,
               toolName: call.name
@@ -93,10 +93,10 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
           }
         }
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: response.text || '我明白您的意思了。' }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: response.text || '我已记录。' }]);
       }
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `抱歉，处理时遇到了问题：${err.message}` }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `抱歉，波函数塌缩异常：${err.message}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -108,45 +108,50 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
   };
 
   return (
-    <div className="w-full sm:w-[380px] md:w-[420px] lg:w-[450px] flex flex-col border-l border-zinc-800 bg-zinc-950 flex-shrink-0 relative h-full">
-      {/* Header */}
-      <div className="p-4 md:p-5 border-b border-zinc-900 flex items-center justify-between bg-black/40 backdrop-blur-md shrink-0">
+    <div className="w-[420px] flex flex-col bg-[#131118]/80 backdrop-blur-3xl border-l border-white/5 flex-shrink-0 relative">
+      {/* 侧边栏顶部胶囊 */}
+      <div className="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.8)]"></div>
-          <h2 className="text-xs md:text-sm font-black uppercase tracking-widest text-zinc-300">Cine Assistant</h2>
+          <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center border border-purple-500/30">
+             <i className="fas fa-sparkles text-purple-400 text-xs"></i>
+          </div>
+          <h2 className="text-xs font-black uppercase tracking-[0.3em] text-purple-200/80">Cine Agent</h2>
         </div>
-        <div className="text-[10px] text-zinc-600 font-mono">V2.0-TURBO</div>
+        <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-zinc-800/50 border border-white/5">
+           <span className="w-1 h-1 rounded-full bg-green-400"></span>
+           <span className="text-[9px] text-zinc-500 font-mono">STABLE</span>
+        </div>
       </div>
 
-      {/* Message List */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 md:space-y-6 scroll-smooth">
+      {/* 消息列表 */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth custom-scrollbar">
         {messages.map((msg, i) => (
           <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-            <div className={`max-w-[90%] md:max-w-[85%] rounded-2xl p-3 md:p-4 text-[13px] md:text-sm leading-relaxed ${
+            <div className={`max-w-[90%] rounded-[1.5rem] px-5 py-4 text-[13px] leading-relaxed shadow-sm ${
               msg.role === 'user' 
-                ? 'bg-violet-600 text-white rounded-tr-none shadow-lg shadow-violet-500/10' 
-                : 'bg-zinc-900 text-zinc-300 rounded-tl-none border border-zinc-800'
+                ? 'bg-purple-600/90 text-white rounded-tr-none shadow-purple-500/20' 
+                : 'bg-[#211e27] text-zinc-200 rounded-tl-none border border-white/5'
             }`}>
               {msg.type === 'tool_call' ? (
-                <div className="flex items-center gap-2 text-violet-400 font-mono text-[11px]">
-                  <i className="fas fa-terminal animate-pulse"></i>
-                  <span>Calling: {msg.toolName}()</span>
+                <div className="flex items-center gap-2 text-purple-300 font-mono text-[10px]">
+                  <i className="fas fa-atom animate-spin-slow"></i>
+                  <span>PROCESSING: {msg.toolName}</span>
                 </div>
               ) : (
                 <div 
-                  className="prose prose-invert prose-sm max-w-none markdown-container"
+                  className="prose prose-invert prose-sm max-w-none markdown-container selection:bg-purple-400/40"
                   dangerouslySetInnerHTML={renderMarkdown(msg.content)} 
                 />
               )}
 
               {msg.preview && (
-                <div className="mt-3 rounded-lg overflow-hidden border border-white/10 shadow-inner bg-black">
+                <div className="mt-4 rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black">
                    {msg.toolName === 'animate_scene' ? (
                      <video src={msg.preview} className="w-full" controls muted loop autoPlay />
                    ) : msg.toolName === 'create_visual_shot' ? (
                      <img src={msg.preview} className="w-full" />
                    ) : (
-                     <div className="p-3 text-xs italic text-zinc-500 line-clamp-3 leading-snug">{msg.preview}</div>
+                     <div className="p-4 text-[11px] text-zinc-400 font-light italic bg-zinc-900/50">{msg.preview}</div>
                    )}
                 </div>
               )}
@@ -154,22 +159,22 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
           </div>
         ))}
         {isTyping && (
-          <div className="flex gap-1.5 p-2">
-            <div className="w-1.5 h-1.5 bg-zinc-700 rounded-full animate-bounce"></div>
-            <div className="w-1.5 h-1.5 bg-zinc-700 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-            <div className="w-1.5 h-1.5 bg-zinc-700 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+          <div className="flex gap-2 p-3 bg-white/5 rounded-full w-fit ml-2">
+            <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></div>
+            <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+            <div className="w-1.5 h-1.5 bg-purple-300 rounded-full animate-pulse [animation-delay:0.4s]"></div>
           </div>
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="p-4 md:p-6 border-t border-zinc-900 bg-black/20 shrink-0">
+      {/* 输入区域胶囊 */}
+      <div className="p-6 border-t border-white/5 bg-[#131118]/50 shrink-0">
         {contextAssets.length > 0 && (
-          <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+          <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
             {contextAssets.map(a => (
-               <div key={a.id} className="h-7 px-2 rounded-lg bg-violet-900/30 border border-violet-500/30 flex items-center gap-2 flex-shrink-0">
-                 <i className="fas fa-paperclip text-[9px] text-violet-400"></i>
-                 <span className="text-[9px] text-violet-200 truncate max-w-[70px]">{a.title}</span>
+               <div key={a.id} className="h-7 px-3 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center gap-2 flex-shrink-0 animate-in fade-in zoom-in-95">
+                 <i className="fas fa-link text-[8px] text-purple-400"></i>
+                 <span className="text-[9px] text-purple-100 font-medium truncate max-w-[80px]">{a.title}</span>
                </div>
             ))}
           </div>
@@ -179,53 +184,29 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
-            placeholder="描述构思、提出要求或询问建议..."
-            className="w-full bg-zinc-900/50 border border-zinc-800 rounded-2xl py-3 md:py-4 pl-4 pr-12 text-sm focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all resize-none h-20 md:h-24 placeholder:text-zinc-700"
+            placeholder="描述您的电影构思..."
+            className="w-full bg-[#1a181f]/80 border border-white/10 rounded-[1.8rem] py-4 pl-5 pr-14 text-sm focus:outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all resize-none h-20 placeholder:text-zinc-600"
           />
           <button 
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
-            className="absolute bottom-3 md:bottom-4 right-3 md:right-4 w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center hover:bg-violet-500 disabled:bg-zinc-800 disabled:text-zinc-600 transition-all shadow-lg"
+            className="absolute bottom-3 right-3 w-10 h-10 rounded-full bg-[#e9d5ff] text-[#581c87] flex items-center justify-center hover:scale-110 disabled:grayscale disabled:opacity-30 transition-all shadow-lg"
           >
-            <i className="fas fa-arrow-up text-xs"></i>
+            <i className="fas fa-paper-plane text-xs"></i>
           </button>
         </div>
-        <p className="text-[9px] text-zinc-600 mt-3 text-center uppercase tracking-widest font-bold">
-          Gemini 3 Pro <span className="text-zinc-800 mx-1">|</span> Kinetic Engine
-        </p>
       </div>
 
       <style>{`
-        .markdown-container p {
-          margin-bottom: 0.75rem;
-        }
-        .markdown-container p:last-child {
-          margin-bottom: 0;
-        }
-        .markdown-container ul, .markdown-container ol {
-          margin-left: 1.25rem;
-          margin-bottom: 0.75rem;
-        }
-        .markdown-container li {
-          margin-bottom: 0.25rem;
-        }
-        .markdown-container code {
-          background-color: rgba(255, 255, 255, 0.1);
-          padding: 0.1rem 0.3rem;
-          border-radius: 0.25rem;
-          font-family: monospace;
-        }
-        .markdown-container h1, .markdown-container h2, .markdown-container h3 {
-          font-weight: bold;
-          margin-top: 1rem;
-          margin-bottom: 0.5rem;
-        }
-        .markdown-container blockquote {
-          border-left: 3px solid #6366f1;
-          padding-left: 0.75rem;
-          color: #a1a1aa;
-          font-style: italic;
-        }
+        .markdown-container p { margin-bottom: 0.8rem; }
+        .markdown-container p:last-child { margin-bottom: 0; }
+        .markdown-container h3 { font-size: 14px; font-weight: 800; color: #d8b4fe; margin-top: 1rem; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.1em; }
+        .markdown-container blockquote { border-left: 2px solid #a855f7; padding-left: 1rem; color: #a1a1aa; font-style: italic; margin: 1rem 0; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .animate-spin-slow { animation: spin 3s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );
