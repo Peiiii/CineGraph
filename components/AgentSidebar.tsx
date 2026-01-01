@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Asset } from '../types';
 import { GeminiService } from '../services/geminiService';
+import { marked } from 'marked';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -101,6 +102,11 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
     }
   };
 
+  const renderMarkdown = (content: string) => {
+    const html = marked.parse(content, { breaks: true });
+    return { __html: html };
+  };
+
   return (
     <div className="w-full sm:w-[380px] md:w-[420px] lg:w-[450px] flex flex-col border-l border-zinc-800 bg-zinc-950 flex-shrink-0 relative h-full">
       {/* Header */}
@@ -127,7 +133,10 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
                   <span>Calling: {msg.toolName}()</span>
                 </div>
               ) : (
-                msg.content
+                <div 
+                  className="prose prose-invert prose-sm max-w-none markdown-container"
+                  dangerouslySetInnerHTML={renderMarkdown(msg.content)} 
+                />
               )}
 
               {msg.preview && (
@@ -185,6 +194,39 @@ const AgentSidebar: React.FC<AgentSidebarProps> = ({ contextAssets, onAddAsset }
           Gemini 3 Pro <span className="text-zinc-800 mx-1">|</span> Kinetic Engine
         </p>
       </div>
+
+      <style>{`
+        .markdown-container p {
+          margin-bottom: 0.75rem;
+        }
+        .markdown-container p:last-child {
+          margin-bottom: 0;
+        }
+        .markdown-container ul, .markdown-container ol {
+          margin-left: 1.25rem;
+          margin-bottom: 0.75rem;
+        }
+        .markdown-container li {
+          margin-bottom: 0.25rem;
+        }
+        .markdown-container code {
+          background-color: rgba(255, 255, 255, 0.1);
+          padding: 0.1rem 0.3rem;
+          border-radius: 0.25rem;
+          font-family: monospace;
+        }
+        .markdown-container h1, .markdown-container h2, .markdown-container h3 {
+          font-weight: bold;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+        }
+        .markdown-container blockquote {
+          border-left: 3px solid #6366f1;
+          padding-left: 0.75rem;
+          color: #a1a1aa;
+          font-style: italic;
+        }
+      `}</style>
     </div>
   );
 };
