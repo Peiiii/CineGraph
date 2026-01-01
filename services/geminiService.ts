@@ -2,41 +2,42 @@
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import { Asset } from "../types";
 
-// 定义 Agent 可以使用的工具
 export const filmTools: FunctionDeclaration[] = [
   {
     name: "create_visual_shot",
-    description: "生成电影画面或视觉分镜。当用户想要‘看’某个画面、‘生成图片’或‘绘制场景’时使用。",
+    description: "生成电影画面、分镜图片或角色视觉图。当需要视觉呈现时使用。",
     parameters: {
       type: Type.OBJECT,
       properties: {
-        prompt: { type: Type.STRING, description: "画面的视觉描述，包含构图、光影、细节。" },
-        style: { type: Type.STRING, description: "画面风格，如：赛博朋克、写实、黑白电影等。" }
+        prompt: { type: Type.STRING, description: "高度详细的视觉描述（英文更佳），包含构图、光效、色彩。" },
+        title: { type: Type.STRING, description: "给这个画面的简洁标题。" }
+      },
+      required: ["prompt", "title"]
+    }
+  },
+  {
+    name: "animate_scene",
+    description: "将已有的分镜或图片转化为动态视频片段。需要指定引用的图片资产 ID 或描述。",
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        prompt: { type: Type.STRING, description: "描述动作和镜头运动，如 'camera dollies in', 'character walks'。" },
+        reference_asset_id: { type: Type.STRING, description: "参考图片的 ID（如果有）。" }
       },
       required: ["prompt"]
     }
   },
   {
-    name: "animate_scene",
-    description: "将静态画面转化为动态视频。当用户想要‘动起来’、‘生成视频’或‘制作动画’时使用。",
+    name: "write_creative_asset",
+    description: "编写剧本片段、角色档案、场景设定等文字资产。这会直接在画布上创建一个文字卡片。",
     parameters: {
       type: Type.OBJECT,
       properties: {
-        movement_description: { type: Type.STRING, description: "镜头运动或物体动作的描述。" }
+        type: { type: Type.STRING, enum: ["character", "scene", "script"], description: "资产类型。" },
+        title: { type: Type.STRING, description: "资产标题。" },
+        content: { type: Type.STRING, description: "详细的文字内容，支持 Markdown。" }
       },
-      required: ["movement_description"]
-    }
-  },
-  {
-    name: "write_story_asset",
-    description: "撰写角色档案、剧本片段或场景描述。当用户需要文字层面的设定时使用。",
-    parameters: {
-      type: Type.OBJECT,
-      properties: {
-        asset_type: { type: Type.STRING, enum: ["character", "scene"], description: "资产类型：角色或场景。" },
-        details: { type: Type.STRING, description: "需要详细阐述的内容或要求。" }
-      },
-      required: ["asset_type", "details"]
+      required: ["type", "title", "content"]
     }
   }
 ];
@@ -46,61 +47,65 @@ export class GeminiService {
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
-  // 对话式 Agent 核心逻辑
-  static async chatWithAgent(message: string, history: any[], contextAssets: Asset[]) {
+  static async chatWithAgent(message: string, contextAssets: Asset[]) {
     const ai = this.getClient();
-    const chat = ai.chats.create({
-      model: "gemini-3-pro-preview", // 使用更强的模型处理逻辑推理
+    // 使用 Pro 模型以获得更稳定的工具调用能力
+    const response = await ai.models.generateContent({
+      model: "gemini-3-pro-preview",
+      contents: [{ role: 'user', parts: [{ text: message }] }],
       config: {
-        systemInstruction: `你是一位全能的 AI 电影导演。你的任务是协助用户通过对话完成电影创作。
-        你可以通过调用工具来：
-        1. 生成视觉分镜 (create_visual_shot)
-        2. 制作动态视频 (animate_scene)
-        3. 编写角色设定和场景剧本 (write_story_asset)
+        systemInstruction: `你是一位全能的 AI 电影导演。
+        你的目标是通过调用工具来协助用户进行电影全流程创作。
         
-        当前画布选中的上下文资产数量：${contextAssets.length}。
-        如果用户提到“这个”、“它”或“基于选中的”，请参考这些上下文。
-        请保持专业、富有创意且简洁。使用中文交流。`,
+        工作流建议：
+        1. 先通过 write_creative_asset 确定角色设定或剧本。
+        2. 调用 create_visual_shot 将剧本转化为视觉分镜。
+        3. 调用 animate_scene 将关键分镜转化为视频。
+        
+        当前工作区资产数量：${contextAssets.length}。
+        如果用户提到“这个”，优先参考选中的资产：${JSON.stringify(contextAssets.map(a => ({id: a.id, type: a.type, title: a.title})))}。
+        请在调用工具后，向用户简要解释你的创作意图。`,
         tools: [{ functionDeclarations: filmTools }]
       }
     });
 
-    const response = await chat.sendMessage({ message });
     return response;
   }
 
-  // 工具执行函数：生图
-  static async executeImageGen(prompt: string, contextAssets: Asset[]) {
+  static async generateImage(prompt: string) {
     const ai = this.getClient();
-    const parts: any[] = [{ text: prompt }];
-    contextAssets.filter(a => a.type === 'image').forEach(asset => {
-      parts.push({ inlineData: { data: asset.content.split(',')[1] || asset.content, mimeType: 'image/png' } });
-    });
-
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: { parts }
+      contents: prompt
     });
-
-    const imageData = response.candidates?.[0]?.content?.parts.find(p => p.inlineData)?.inlineData?.data;
-    if (!imageData) throw new Error("生图失败");
-    return `data:image/png;base64,${imageData}`;
+    
+    let base64 = "";
+    for (const part of response.candidates[0].content.parts) {
+      if (part.inlineData) base64 = part.inlineData.data;
+    }
+    if (!base64) throw new Error("Image generation failed");
+    return `data:image/png;base64,${base64}`;
   }
 
-  // 工具执行函数：生视频
-  static async executeVideoGen(prompt: string, contextAssets: Asset[]) {
+  static async generateVideo(prompt: string, imageBase64?: string) {
     const ai = this.getClient();
-    const refImg = contextAssets.find(a => a.type === 'image');
-    
-    let op = await ai.models.generateVideos({
+    const config = { 
       model: 'veo-3.1-fast-generate-preview',
       prompt,
-      image: refImg ? { imageBytes: refImg.content.split(',')[1], mimeType: 'image/png' } : undefined,
       config: { resolution: '720p', aspectRatio: '16:9' }
-    });
+    } as any;
+
+    if (imageBase64) {
+      config.image = {
+        imageBytes: imageBase64.includes(',') ? imageBase64.split(',')[1] : imageBase64,
+        mimeType: 'image/png'
+      };
+    }
+
+    let op = await ai.models.generateVideos(config);
     
     while (!op.done) {
-      await new Promise(r => setTimeout(r, 10000));
+      await new Promise(r => setTimeout(r, 8000));
       op = await ai.operations.getVideosOperation({ operation: op });
     }
 

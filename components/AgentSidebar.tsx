@@ -1,33 +1,20 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Asset } from '../types';
+import { Asset, AssetType } from '../types';
 import { GeminiService } from '../services/geminiService';
 import { marked } from 'marked';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  isExecuting?: boolean;
+  toolInfo?: string;
 }
 
-const SuggestionCard = ({ title, desc, images }: { title: string, desc: string, images: string[] }) => (
-  <div className="group relative bg-[#F8F9FA] hover:bg-white border border-transparent hover:border-[#E9ECEF] rounded-[1.2rem] p-4 pr-24 transition-all cursor-pointer sharp-shadow overflow-hidden min-h-[90px] flex flex-col justify-center">
-    <h4 className="text-[14px] font-bold text-black mb-0.5">{title}</h4>
-    <p className="text-[11px] text-[#ADB5BD] line-clamp-1 leading-relaxed">{desc}</p>
-    <div className="absolute right-[-5px] top-1/2 -translate-y-1/2 flex items-center h-full">
-      {images.map((img, i) => (
-        <img 
-          key={i} 
-          src={img} 
-          className="w-12 h-16 object-cover rounded-lg shadow-md border-2 border-white -ml-7 first:ml-0 transform transition-transform group-hover:-translate-y-1"
-          style={{ zIndex: images.length - i, transform: `rotate(${(i - 1) * 6}deg) translateY(${i === 1 ? '-4px' : '0'})` }}
-        />
-      ))}
-    </div>
-  </div>
-);
-
 const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) => void }> = ({ contextAssets, onAddAsset }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'assistant', content: '你好，我是你的 AI 导演。你可以让我帮你写剧本、设计角色或直接生成分镜片段。' }
+  ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -42,10 +29,76 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
     setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setIsTyping(true);
+
     try {
-      // 保持电影创作的逻辑，但 UI 遵循 Lovart
-      const response = await GeminiService.chatWithAgent(userMsg, [], contextAssets);
-      setMessages(prev => [...prev, { role: 'assistant', content: response.text || '导演已收到指令，正在准备拍摄...' }]);
+      const response = await GeminiService.chatWithAgent(userMsg, contextAssets);
+      
+      // 1. 处理工具调用 (Cursor-like behavior)
+      if (response.functionCalls && response.functionCalls.length > 0) {
+        for (const call of response.functionCalls) {
+          const { name, args } = call;
+          
+          // 显示执行状态
+          setMessages(prev => [...prev, { 
+            role: 'assistant', 
+            content: `正在执行任务: ${name}...`, 
+            isExecuting: true,
+            toolInfo: JSON.stringify(args)
+          }]);
+
+          try {
+            let newAsset: Asset | null = null;
+
+            if (name === 'create_visual_shot') {
+              const dataUrl = await GeminiService.generateImage(args.prompt as string);
+              newAsset = {
+                id: Math.random().toString(36).substr(2, 9),
+                type: 'image',
+                content: dataUrl,
+                title: args.title as string || 'AI 生成分镜',
+                createdAt: Date.now()
+              };
+            } else if (name === 'animate_scene') {
+              // 寻找参考图
+              const ref = contextAssets.find(a => a.id === args.reference_asset_id) || contextAssets.find(a => a.type === 'image');
+              const videoUrl = await GeminiService.generateVideo(args.prompt as string, ref?.content);
+              newAsset = {
+                id: Math.random().toString(36).substr(2, 9),
+                type: 'video',
+                content: videoUrl,
+                title: 'AI 动态片段',
+                createdAt: Date.now()
+              };
+            } else if (name === 'write_creative_asset') {
+              newAsset = {
+                id: Math.random().toString(36).substr(2, 9),
+                type: (args.type as AssetType) || 'text',
+                content: args.content as string,
+                title: args.title as string,
+                createdAt: Date.now()
+              };
+            }
+
+            if (newAsset) {
+              onAddAsset(newAsset);
+              // 更新消息，告知已完成
+              setMessages(prev => {
+                const last = prev[prev.length - 1];
+                return [...prev.slice(0, -1), { ...last, isExecuting: false, content: `✨ 已成功创建：${newAsset?.title}` }];
+              });
+            }
+          } catch (err) {
+            console.error("Tool execution failed:", err);
+            setMessages(prev => [...prev, { role: 'assistant', content: `❌ 执行工具 ${name} 时出错。` }]);
+          }
+        }
+      }
+
+      // 2. 显示模型的文本回复
+      if (response.text) {
+        setMessages(prev => [...prev, { role: 'assistant', content: response.text! }]);
+      }
+
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${err.message}` }]);
     } finally {
@@ -64,132 +117,75 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
 
   return (
     <div className="h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1.8rem] sharp-shadow overflow-hidden relative">
-      {/* 极简 Header */}
-      <header className="px-6 py-4 flex items-center justify-between">
+      <header className="px-6 py-4 flex items-center justify-between border-b border-[#F8F9FA]">
         <div className="flex items-center gap-2">
-           <IconButton icon="fa-solid fa-plus" className="!w-6 !h-6 !text-[12px]" />
+           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+           <span className="text-[10px] font-bold text-[#ADB5BD] uppercase tracking-widest">Director Mode</span>
         </div>
         <div className="flex gap-0.5 items-center">
            <IconButton icon="fa-solid fa-sliders" />
            <IconButton icon="fa-solid fa-share-nodes" />
-           <IconButton icon="fa-regular fa-clone" />
            <IconButton icon="fa-solid fa-arrow-up-right-from-square" className="!text-[12px]" />
         </div>
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-2 space-y-4 scroll-smooth custom-scrollbar">
-        {messages.length === 0 ? (
-          <div className="space-y-6">
-            {/* Intro Section - 更加紧凑 */}
-            <div className="mt-2">
-               <div className="w-9 h-9 bg-black rounded-full flex items-center justify-center text-[11px] text-white font-black mb-4">L</div>
-               <h1 className="text-[24px] font-bold text-black tracking-tight leading-tight">Hi，我是你的AI导演</h1>
-               <p className="text-[16px] text-[#ADB5BD] mt-1 font-medium">开启今天的电影创作之旅吧！</p>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 space-y-6 scroll-smooth custom-scrollbar">
+        {messages.map((msg, i) => (
+          <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+            <div className="flex items-center gap-2 mb-2">
+               {msg.role === 'assistant' && (
+                 <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center text-[8px] text-white font-black">L</div>
+               )}
+               <span className="text-[9px] font-black text-[#ADB5BD] uppercase tracking-widest">
+                 {msg.role === 'assistant' ? 'Director' : 'Creator'}
+               </span>
             </div>
-
-            {/* Suggestion Cards - Lovart 风格的高利用率 */}
-            <div className="grid gap-3">
-              <SuggestionCard 
-                title="剧本创作 (Script)" 
-                desc="编写一段惊心动魄的雨夜追逐戏..." 
-                images={[
-                  "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&q=80",
-                  "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=200&q=80",
-                  "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=200&q=80"
-                ]}
-              />
-              <SuggestionCard 
-                title="角色设计 (Character)" 
-                desc="设计一个生活在2077年的赛博侦探..." 
-                images={[
-                  "https://images.unsplash.com/photo-1542332213-9b5a5a3fad35?w=200&q=80",
-                  "https://images.unsplash.com/photo-1514539079130-25950c84af65?w=200&q=80",
-                  "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200&q=80"
-                ]}
-              />
-              <SuggestionCard 
-                title="分镜生成 (Storyboard)" 
-                desc="将剧本转化为一组极具张力的视觉分镜..." 
-                images={[
-                  "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200&q=80",
-                  "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200&q=80",
-                  "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&q=80"
-                ]}
-              />
-            </div>
-
-            <button className="flex items-center gap-2 text-[11px] text-[#ADB5BD] hover:text-black transition-colors py-1">
-              <i className="fa-solid fa-rotate text-[10px]"></i> 换一批
-            </button>
-          </div>
-        ) : (
-          messages.map((msg, i) => (
-            <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div className="flex items-center gap-2 mb-2">
-                 {msg.role === 'assistant' && (
-                   <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center text-[8px] text-white font-black">L</div>
-                 )}
-                 <span className="text-[9px] font-black text-[#ADB5BD] uppercase tracking-widest">
-                   {msg.role === 'assistant' ? 'Director' : 'Creator'}
-                 </span>
-              </div>
-              <div className={`text-[13px] leading-relaxed max-w-[90%] ${
-                msg.role === 'user' 
-                  ? 'bg-[#F8F9FA] px-4 py-2.5 rounded-[1rem] rounded-tr-none text-black' 
+            <div className={`text-[13px] leading-relaxed max-w-[90%] ${
+              msg.role === 'user' 
+                ? 'bg-[#F8F9FA] px-4 py-3 rounded-[1.2rem] rounded-tr-none text-black' 
+                : msg.isExecuting 
+                  ? 'bg-blue-50/50 border border-blue-100 px-4 py-3 rounded-[1rem] text-blue-600 italic flex items-center gap-3'
                   : 'text-black font-medium'
-              }`}>
-                <div className="prose prose-sm prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }} />
-              </div>
+            }`}>
+              {msg.isExecuting && <i className="fa-solid fa-circle-notch animate-spin text-[10px]"></i>}
+              <div className="prose prose-sm prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }} />
             </div>
-          ))
+          </div>
+        ))}
+        {isTyping && !messages[messages.length-1]?.isExecuting && (
+           <div className="flex gap-1.5 items-center px-4 opacity-30">
+              <div className="w-1 h-1 bg-black rounded-full animate-bounce"></div>
+              <div className="w-1 h-1 bg-black rounded-full animate-bounce [animation-delay:0.2s]"></div>
+              <div className="w-1 h-1 bg-black rounded-full animate-bounce [animation-delay:0.4s]"></div>
+           </div>
         )}
       </div>
 
-      {/* Footer Area - 极致简约 */}
-      <div className="px-5 pb-5 pt-2 space-y-3">
-        {/* Promo Banner - 更细更轻 */}
-        <div className="bg-[#E3F2FD]/60 rounded-xl px-4 py-2 flex items-center justify-between border border-[#BBDEFB]/30">
-           <div className="flex items-center gap-2">
-              <i className="fa-solid fa-gift text-[#1976D2] text-[12px]"></i>
-              <span className="text-[11px] font-semibold text-[#1976D2]">升级会员，开启无限视频生成特权！</span>
-           </div>
-           <button className="text-[#1976D2] opacity-40 hover:opacity-100 transition-opacity"><i className="fa-solid fa-xmark text-[12px]"></i></button>
-        </div>
-
-        {/* Input Box - 整合到单行操作感 */}
+      <div className="px-5 pb-5 pt-2">
         <div className="bg-[#F8F9FA] rounded-[1.5rem] p-4 border border-transparent focus-within:bg-white focus-within:border-[#E9ECEF] transition-all duration-300">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
-            placeholder="输入创作指令，如：生成一段森林追逐的分镜"
+            placeholder="下达创作指令..."
             className="w-full bg-transparent px-1 text-[13px] focus:outline-none resize-none h-12 placeholder:text-[#ADB5BD] text-black font-medium"
           />
           
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-0.5">
-               <IconButton icon="fa-solid fa-paperclip" className="!w-7 !h-7 !text-[#ADB5BD]" />
-               <IconButton icon="fa-solid fa-at" className="!w-7 !h-7 !text-[#ADB5BD]" />
-               <button className="w-7 h-7 rounded-[7px] flex items-center justify-center text-[#0066FF] hover:bg-[#F0F2F5] transition-all ml-0.5">
+               <IconButton icon="fa-solid fa-paperclip" />
+               <IconButton icon="fa-solid fa-at" />
+               <button className="w-7 h-7 rounded-[7px] flex items-center justify-center text-[#0066FF] hover:bg-[#F0F2F5] transition-all">
                  <i className="fa-solid fa-wand-magic-sparkles text-[12px]"></i>
                </button>
             </div>
-
-            <div className="flex items-center gap-3">
-               <div className="flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-white border border-black/[0.03]">
-                 <IconButton icon="fa-regular fa-lightbulb" className="!w-6 !h-6 !text-[12px]" />
-                 <IconButton icon="fa-solid fa-bolt" className="!w-6 !h-6 !text-[12px]" />
-                 <IconButton icon="fa-solid fa-globe" className="!w-6 !h-6 !text-[12px]" />
-                 <IconButton icon="fa-solid fa-cube" className="!w-6 !h-6 !text-[12px]" />
-               </div>
-               
-               <button 
-                 onClick={handleSend}
-                 className="w-8 h-8 rounded-full bg-[#BDBDBD] text-white flex items-center justify-center hover:bg-black transition-all active:scale-95 shadow-sm"
-               >
-                 <i className="fa-solid fa-arrow-up text-[12px]"></i>
-               </button>
-            </div>
+            <button 
+              onClick={handleSend}
+              disabled={isTyping}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 shadow-sm ${isTyping ? 'bg-gray-200 cursor-not-allowed' : 'bg-black text-white hover:bg-zinc-800'}`}
+            >
+              <i className="fa-solid fa-arrow-up text-[12px]"></i>
+            </button>
           </div>
         </div>
       </div>
