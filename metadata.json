@@ -1,0 +1,7 @@
+{
+  "name": "CineGraph AI Studio",
+  "description": "基于 Gemini 的全流程 AI 电影创作平台，将画布作为创作资产的交互核心。",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
