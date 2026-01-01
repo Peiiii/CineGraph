@@ -13,42 +13,40 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected, onSelect, onRemo
   return (
     <div 
       onClick={() => onSelect(asset.id)}
-      className={`group relative flex flex-col gap-4 transition-all duration-500 cursor-pointer`}
+      className={`group relative flex flex-col gap-4 transition-all duration-500 cursor-pointer max-w-[480px]`}
     >
-      <div className={`relative aspect-video rounded-[2.2rem] overflow-hidden transition-all duration-500 ${
+      <div className={`relative rounded-[2.5rem] overflow-hidden transition-all duration-500 ${
         selected 
-        ? 'ring-[6px] ring-[#0066FF] shadow-[0_30px_60px_-12px_rgba(0,102,255,0.25)] scale-[0.98]' 
-        : 'bg-white border border-black/[0.03] hover:border-black/10'
+        ? 'ring-[6px] ring-[#0066FF] shadow-[0_40px_80px_-12px_rgba(0,102,255,0.2)] scale-[0.99]' 
+        : 'bg-white border border-[#E9ECEF] sharp-shadow hover:scale-[1.01]'
       }`}>
         {asset.type === 'image' && (
-          <img src={asset.content} alt={asset.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+          <img src={asset.content} alt={asset.title} className="w-full object-cover max-h-[60vh] transition-transform duration-700" />
         )}
         {asset.type === 'video' && (
-          <video src={asset.content} className="w-full h-full object-cover" controls={false} muted loop autoPlay />
+          <video src={asset.content} className="w-full object-cover max-h-[60vh]" controls={false} muted loop autoPlay />
         )}
-        {(asset.type === 'character' || asset.type === 'scene' || asset.type === 'text') && (
-          <div className="p-10 h-full flex flex-col bg-slate-50/50 justify-center">
-            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-black/10 mb-4">{asset.type}</span>
-            <p className="text-[14px] leading-relaxed font-bold text-black/60 italic">"{asset.content}"</p>
-          </div>
-        )}
-
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 bg-black text-white px-6 py-2.5 rounded-full flex items-center gap-3 shadow-2xl pointer-events-none">
+        
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/2 transition-colors"></div>
+        
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 bg-black text-white px-6 py-3 rounded-full flex items-center gap-3 shadow-2xl pointer-events-none z-10">
            <i className="fas fa-plus text-[10px]"></i>
-           <span className="text-[11px] font-black tracking-tight whitespace-nowrap">⌘ + 点击编辑特定区域</span>
+           <span className="text-[11px] font-black tracking-tight whitespace-nowrap">COMMAND + CLICK TO EDIT</span>
         </div>
       </div>
       
-      <div className="flex items-center justify-between px-4">
-        <h3 className={`text-[11px] font-black uppercase tracking-widest transition-colors ${selected ? 'text-[#0066FF]' : 'text-black/30 group-hover:text-black'}`}>
-          {asset.title}
-        </h3>
+      <div className="flex items-center justify-between px-6">
+        <div>
+          <h3 className={`text-[12px] font-black uppercase tracking-[0.2em] transition-colors ${selected ? 'text-[#0066FF]' : 'text-[#ADB5BD] group-hover:text-black'}`}>
+            {asset.title}
+          </h3>
+        </div>
         {onRemove && (
           <button 
             onClick={(e) => { e.stopPropagation(); onRemove(asset.id); }} 
-            className="w-8 h-8 rounded-full text-[#D1D1D6] hover:text-red-500 transition-all"
+            className="w-10 h-10 rounded-[12px] text-[#ADB5BD] hover:bg-[#F0F2F5] hover:text-red-500 transition-all flex items-center justify-center"
           >
-            <i className="fas fa-trash-can text-[10px]"></i>
+            <i className="fas fa-trash-can text-[12px]"></i>
           </button>
         )}
       </div>
