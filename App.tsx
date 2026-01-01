@@ -24,77 +24,68 @@ const App: React.FC = () => {
   });
 
   return (
-    <div className="flex h-screen w-screen p-6 gap-6 relative">
+    <div className="flex h-screen w-screen p-5 gap-5 bg-[#F4F4F7]">
       
-      {/* 浮动侧边导航 - 参考图左侧 */}
-      <div className="w-16 flex flex-col items-center py-8 bg-white soft-shadow rounded-[2rem] z-50">
-        <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center mb-10">
+      {/* 极简左侧悬浮导航 */}
+      <div className="w-16 flex flex-col items-center py-8 bg-white border border-black/[0.02] rounded-[2rem] z-50">
+        <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center mb-12 hover:scale-105 transition-transform cursor-pointer">
           <div className="w-4 h-4 bg-white rounded-sm rotate-45"></div>
         </div>
         
-        <nav className="flex flex-col gap-8 flex-1">
+        <nav className="flex flex-col gap-9 flex-1">
           {[
-            { id: 'all', icon: 'fa-play' },
-            { id: 'characters', icon: 'fa-plus' },
+            { id: 'all', icon: 'fa-location-arrow' },
+            { id: 'drawing', icon: 'fa-plus' },
             { id: 'scenes', icon: 'fa-square' },
-            { id: 'shots', icon: 'fa-t' },
-            { id: 'drawing', icon: 'fa-pen-nib' },
+            { id: 'text', icon: 'fa-t' },
+            { id: 'pen', icon: 'fa-pen-nib' },
             { id: 'media', icon: 'fa-image' },
-            { id: 'video', icon: 'fa-film' }
+            { id: 'video', icon: 'fa-clapperboard' }
           ].map(tab => (
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                activeTab === tab.id ? 'bg-slate-50 text-black' : 'text-slate-300 hover:text-slate-500'
+                activeTab === tab.id ? 'bg-black text-white shadow-lg' : 'text-[#D1D1D6] hover:text-black'
               }`}
             >
-              <i className={`fas ${tab.icon} text-sm`}></i>
+              <i className={`fas ${tab.icon} text-[14px]`}></i>
             </button>
           ))}
         </nav>
         
-        <div className="mt-auto flex flex-col gap-4 items-center">
-           <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold">W</div>
-           <div className="flex items-center gap-1 text-[10px] font-black text-slate-400">
-             <i className="fas fa-bolt text-[8px]"></i> 88
+        <div className="flex flex-col gap-5 items-center">
+           <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-black/30 font-black">W</div>
+           <div className="flex items-center gap-1.5 text-[10px] font-black text-black/10">
+             <i className="fas fa-bolt"></i> 88
            </div>
         </div>
       </div>
 
-      {/* 中央主区 */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* 顶部工具栏 - 参考图顶部 */}
-        <div className="h-16 flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 group cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-white soft-shadow flex items-center justify-center">
-                <i className="fas fa-chevron-down text-[10px]"></i>
-              </div>
-              <span className="text-sm font-bold text-slate-900">未命名</span>
+        <header className="h-16 flex items-center justify-between px-4 mb-2">
+          <div className="flex items-center gap-3 cursor-pointer group">
+            <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center">
+              <i className="fas fa-chevron-down text-[8px] text-white"></i>
             </div>
+            <span className="text-[13px] font-black uppercase tracking-widest text-black">CineGraph / Project</span>
           </div>
 
-          <div className="flex items-center gap-2 bg-white soft-shadow rounded-full px-4 py-2">
-            <button className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-black">
-              <i className="fas fa-minus text-[10px]"></i>
-            </button>
-            <span className="text-[11px] font-black text-slate-800 w-12 text-center">33%</span>
-            <button className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-black">
-              <i className="fas fa-plus text-[10px]"></i>
-            </button>
+          <div className="flex items-center bg-white border border-black/[0.02] rounded-full px-2 py-1.5 sharp-shadow">
+            <button className="w-8 h-8 text-[#D1D1D6] hover:text-black transition-colors"><i className="fas fa-minus text-[10px]"></i></button>
+            <span className="text-[11px] font-black text-black px-5 tracking-tighter">33%</span>
+            <button className="w-8 h-8 text-[#D1D1D6] hover:text-black transition-colors"><i className="fas fa-plus text-[10px]"></i></button>
           </div>
-        </div>
+        </header>
 
-        {/* 画布 */}
-        <main className="flex-1 overflow-y-auto rounded-[3rem] bg-white soft-shadow p-12 relative">
+        <main className="flex-1 bg-white border border-black/[0.02] rounded-[3rem] sharp-shadow overflow-y-auto p-16 custom-scrollbar">
           {assets.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center opacity-10">
-               <i className="fas fa-clapperboard text-8xl mb-6"></i>
-               <p className="text-xs font-black tracking-[0.8em] uppercase">Studio Canvas Ready</p>
+            <div className="h-full flex flex-col items-center justify-center opacity-[0.03]">
+               <i className="fas fa-clapperboard text-[120px] mb-8"></i>
+               <p className="text-[12px] font-black tracking-[1.2em] uppercase">Lovart Studio</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-16">
               {filteredAssets.map(asset => (
                 <AssetCard 
                   key={asset.id} 
@@ -109,11 +100,14 @@ const App: React.FC = () => {
         </main>
       </div>
 
-      {/* 右侧 Agent 边栏 */}
       <AgentSidebar 
         contextAssets={assets.filter(a => selectedIds.has(a.id))} 
         onAddAsset={(a) => setAssets(prev => [a, ...prev])}
       />
+      
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 0px; }
+      `}</style>
     </div>
   );
 };

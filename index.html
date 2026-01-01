@@ -21,10 +21,10 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
   :root {
-    --bg-main: #F9F9FB;
+    --bg-main: #F4F4F7; /* 更清爽的底色 */
     --surface: #FFFFFF;
-    --accent: #3D8BFF;
-    --text-primary: #121212;
+    --accent: #0066FF; /* 纯正的克莱因蓝 */
+    --text-primary: #000000;
   }
   body {
     font-family: 'Plus Jakarta Sans', sans-serif;
@@ -33,13 +33,23 @@
     color: var(--text-primary);
   }
   ::-webkit-scrollbar { width: 0px; }
-  .soft-shadow {
-    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.04), 0 2px 8px -1px rgba(0, 0, 0, 0.02);
+  
+  /* 锐利的投影，不再是一团模糊 */
+  .sharp-shadow {
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03);
   }
-  .floating-pill {
-    backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+  
+  /* 聚焦边框 */
+  .focus-ring {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+
+  /* 消除蒙层感的玻璃态：提高透明度，增加模糊 */
+  .glass {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.05);
   }
 </style>
 </head>
