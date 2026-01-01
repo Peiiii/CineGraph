@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CineGraph | Lovart Experience</title>
+    <title>CineGraph | Lovart Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script type="importmap">
@@ -21,35 +21,27 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
   :root {
-    --bg-main: #F4F4F7; /* 更清爽的底色 */
+    --bg-main: #F8F9FA;
     --surface: #FFFFFF;
-    --accent: #0066FF; /* 纯正的克莱因蓝 */
-    --text-primary: #000000;
+    --accent: #0066FF;
+    --text-primary: #1A1C1E;
   }
   body {
     font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
     background-color: var(--bg-main);
     color: var(--text-primary);
+    letter-spacing: -0.01em;
   }
   ::-webkit-scrollbar { width: 0px; }
   
-  /* 锐利的投影，不再是一团模糊 */
   .sharp-shadow {
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 12px 24px -10px rgba(0,0,0,0.04);
   }
   
-  /* 聚焦边框 */
-  .focus-ring {
-    outline: 2px solid var(--accent);
-    outline-offset: 4px;
-  }
-
-  /* 消除蒙层感的玻璃态：提高透明度，增加模糊 */
-  .glass {
-    backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+  /* 优化 FontAwesome 图标细节 */
+  .fa-regular, .fa-solid {
+    -webkit-font-smoothing: initial;
   }
 </style>
 </head>
