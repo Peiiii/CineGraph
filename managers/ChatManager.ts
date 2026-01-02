@@ -67,15 +67,25 @@ export class ChatManager {
 
             try {
               let newAsset: Asset | null = null;
+              // Calculate default position based on current viewport to satisfy Asset type requirements
+              const { viewport } = useAssetStore.getState();
+              const defaultPosition = {
+                x: -viewport.x / viewport.zoom + (window.innerWidth / 2) / viewport.zoom - 200,
+                y: -viewport.y / viewport.zoom + (window.innerHeight / 2) / viewport.zoom - 150,
+              };
+
               if (name === 'create_visual_shot') {
                 const dataUrl = await GeminiService.generateImage(args.prompt as string);
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'image', content: dataUrl, title: args.title as string || 'AI 视觉分镜', createdAt: Date.now() };
+                // Fix: Added missing position property
+                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'image', content: dataUrl, title: args.title as string || 'AI 视觉分镜', createdAt: Date.now(), position: defaultPosition };
               } else if (name === 'animate_scene') {
                 const ref = contextAssets.find(a => a.id === args.reference_asset_id) || contextAssets.find(a => a.type === 'image');
                 const videoUrl = await GeminiService.generateVideo(args.prompt as string, ref?.content);
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'video', content: videoUrl, title: 'AI 动态片段', createdAt: Date.now() };
+                // Fix: Added missing position property
+                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'video', content: videoUrl, title: 'AI 动态片段', createdAt: Date.now(), position: defaultPosition };
               } else if (name === 'write_creative_asset') {
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: (args.type as AssetType) || 'text', content: args.content as string, title: args.title as string, createdAt: Date.now() };
+                // Fix: Added missing position property
+                newAsset = { id: Math.random().toString(36).substr(2, 9), type: (args.type as AssetType) || 'text', content: args.content as string, title: args.title as string, createdAt: Date.now(), position: defaultPosition };
               }
 
               if (newAsset) {

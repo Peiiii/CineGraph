@@ -1,15 +1,33 @@
 
 import { useAssetStore } from '../stores/useAssetStore';
-import { Asset } from '../types';
+import { Asset, Viewport } from '../types';
 
 export class AssetManager {
-  addAsset = (asset: Asset) => {
-    useAssetStore.getState().setAssets((prev) => [asset, ...prev]);
+  addAsset = (asset: Omit<Asset, 'position'>) => {
+    const { viewport } = useAssetStore.getState();
+    // 默认放在视口中心
+    const position = {
+      x: -viewport.x / viewport.zoom + (window.innerWidth / 2) / viewport.zoom - 200,
+      y: -viewport.y / viewport.zoom + (window.innerHeight / 2) / viewport.zoom - 150,
+    };
+    useAssetStore.getState().setAssets((prev) => [{ ...asset, position } as Asset, ...prev]);
+  };
+
+  updateAssetPosition = (id: string, x: number, y: number) => {
+    useAssetStore.getState().setAssets((prev) => 
+      prev.map(a => a.id === id ? { ...a, position: { x, y } } : a)
+    );
   };
 
   removeAsset = (id: string) => {
     useAssetStore.getState().setAssets((prev) => prev.filter(a => a.id !== id));
-    this.deselectAsset(id);
+  };
+
+  setViewport = (v: Partial<Viewport> | ((prev: Viewport) => Viewport)) => {
+    useAssetStore.getState().setViewport(prev => {
+      const next = typeof v === 'function' ? v(prev) : { ...prev, ...v };
+      return { ...next, zoom: Math.max(0.1, Math.min(next.zoom, 5)) };
+    });
   };
 
   toggleSelection = (id: string) => {
@@ -19,21 +37,7 @@ export class AssetManager {
     setSelectedIds(next);
   };
 
-  deselectAsset = (id: string) => {
-    const { setSelectedIds, selectedIds } = useAssetStore.getState();
-    if (selectedIds.has(id)) {
-      const next = new Set(selectedIds);
-      next.delete(id);
-      setSelectedIds(next);
-    }
-  };
-
   setActiveTab = (tab: any) => {
     useAssetStore.getState().setActiveTab(tab);
-  };
-
-  getSelectedAssets = () => {
-    const { assets, selectedIds } = useAssetStore.getState();
-    return assets.filter(a => selectedIds.has(a.id));
   };
 }

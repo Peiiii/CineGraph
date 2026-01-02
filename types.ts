@@ -4,8 +4,9 @@ export type AssetType = 'image' | 'video' | 'text' | 'character' | 'scene';
 export interface Asset {
   id: string;
   type: AssetType;
-  content: string; // Base64 for images/videos, string for text
+  content: string; 
   title: string;
+  position: { x: number, y: number }; // 空间位置
   description?: string;
   metadata?: {
     prompt?: string;
@@ -15,17 +16,8 @@ export interface Asset {
   createdAt: number;
 }
 
-export enum TaskType {
-  IMAGE_GEN = 'IMAGE_GEN',
-  VIDEO_GEN = 'VIDEO_GEN',
-  STORYBOARD = 'STORYBOARD',
-  CHARACTER_DESIGN = 'CHARACTER_DESIGN',
-}
-
-export interface GenerationResult {
-  id: string;
-  type: AssetType;
-  content: string;
-  status: 'pending' | 'completed' | 'failed';
-  error?: string;
+export interface Viewport {
+  x: number;
+  y: number;
+  zoom: number;
 }

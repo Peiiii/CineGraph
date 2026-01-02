@@ -35,20 +35,23 @@ const AgentSidebar: React.FC = () => {
     }
   }, [messages]);
 
-  const IconButton = ({ icon, className = "" }: { icon: string, className?: string }) => (
-    <button className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all text-[#ADB5BD] hover:bg-[#F0F2F5] hover:text-black ${className}`}>
+  const IconButton = ({ icon, title, className = "" }: { icon: string, title: string, className?: string }) => (
+    <button 
+      title={title}
+      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all text-[#ADB5BD] hover:bg-[#F0F2F5] hover:text-black ${className}`}
+    >
       <i className={`${icon} text-[14px]`}></i>
     </button>
   );
 
   return (
-    <div className="h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1.4rem] overflow-hidden relative">
+    <div className="h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1.4rem] overflow-hidden relative shadow-sm">
       <header className="px-6 py-4 flex items-center justify-end gap-0.5 border-b border-[#F8F9FA]">
-        <IconButton icon="fa-regular fa-plus-square" className="!w-7 !h-7" />
-        <IconButton icon="fa-solid fa-sliders" className="!w-7 !h-7" />
-        <IconButton icon="fa-solid fa-share-nodes" className="!w-7 !h-7" />
-        <IconButton icon="fa-regular fa-clone" className="!w-7 !h-7" />
-        <IconButton icon="fa-solid fa-arrow-up-right-from-square" className="!text-[12px] !w-7 !h-7" />
+        <IconButton icon="fa-regular fa-plus-square" title="新建会话" className="!w-7 !h-7" />
+        <IconButton icon="fa-solid fa-sliders" title="参数设置" className="!w-7 !h-7" />
+        <IconButton icon="fa-solid fa-share-nodes" title="分享项目" className="!w-7 !h-7" />
+        <IconButton icon="fa-regular fa-clone" title="复制资产" className="!w-7 !h-7" />
+        <IconButton icon="fa-solid fa-arrow-up-right-from-square" title="导出" className="!text-[12px] !w-7 !h-7" />
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-7 py-5 space-y-7 scroll-smooth custom-scrollbar">
@@ -56,8 +59,8 @@ const AgentSidebar: React.FC = () => {
           <div className="space-y-7">
             <div className="mt-2">
                <div className="w-9 h-9 bg-black rounded-full flex items-center justify-center text-[11px] text-white font-black mb-5">L</div>
-               <h1 className="text-[24px] font-extrabold text-black tracking-tight leading-tight">Hi，我是你的AI导演</h1>
-               <p className="text-[15px] text-[#ADB5BD] mt-1 font-medium font-['Plus_Jakarta_Sans']">开启你的电影创作之旅</p>
+               <h1 className="text-[22px] font-extrabold text-black tracking-tight leading-tight">AI 导演助手已就绪</h1>
+               <p className="text-[14px] text-[#ADB5BD] mt-1 font-medium">描述你的电影创意，我将协助你完成分镜与剧本</p>
             </div>
 
             <div className="grid gap-3">
@@ -99,21 +102,20 @@ const AgentSidebar: React.FC = () => {
       </div>
 
       <div className="px-5 pb-5 pt-2 space-y-4">
-        {/* Input UI */}
         <div className="bg-[#F8F9FA] rounded-[1.4rem] p-4 border border-transparent focus-within:bg-white focus-within:border-[#E9ECEF] transition-all duration-300">
           <textarea
             value={input}
             onChange={(e) => presenter.chatManager.setInput(e.target.value)}
             onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); presenter.chatManager.sendMessage(); }}}
-            placeholder="输入创作指令..."
+            placeholder="输入创作指令，例如：生成一段追逐戏的分镜..."
             className="w-full bg-transparent px-1 text-[13px] focus:outline-none resize-none h-14 placeholder:text-[#ADB5BD] text-black font-medium"
           />
           
           <div className="flex items-center justify-between mt-3">
             <div className="flex items-center gap-1">
-               <IconButton icon="fa-solid fa-paperclip" className="!w-7 !h-7" />
-               <IconButton icon="fa-solid fa-at" className="!w-7 !h-7" />
-               <button className="w-7 h-7 rounded-full bg-[#E3F2FD] text-[#0066FF] flex items-center justify-center transition-all">
+               <IconButton icon="fa-solid fa-paperclip" title="上传附件" className="!w-7 !h-7" />
+               <IconButton icon="fa-solid fa-at" title="提及资产" className="!w-7 !h-7" />
+               <button title="灵感增强" className="w-7 h-7 rounded-full bg-[#E3F2FD] text-[#0066FF] flex items-center justify-center transition-all hover:bg-[#0066FF] hover:text-white">
                  <i className="fa-solid fa-wand-magic-sparkles text-[11px]"></i>
                </button>
             </div>
@@ -122,6 +124,7 @@ const AgentSidebar: React.FC = () => {
                <button 
                  onClick={() => presenter.chatManager.sendMessage()}
                  disabled={isTyping}
+                 title="发送指令"
                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90 ${isTyping ? 'bg-gray-100 text-gray-400' : 'bg-[#C4C4C4] hover:bg-black text-white'}`}
                >
                  <i className="fa-solid fa-arrow-up text-[13px]"></i>
