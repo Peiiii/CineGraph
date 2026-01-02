@@ -38,49 +38,67 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // 自动滚动到底部
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isTyping]);
+  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
     const userMsg = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    
+    // 初始化消息列表
+    setMessages(prev => [
+      ...prev, 
+      { role: 'user', content: userMsg },
+      { role: 'assistant', content: '', isStreaming: true, step: 'thinking' }
+    ]);
     setIsTyping(true);
-
-    // 初始等待占位消息
-    setMessages(prev => [...prev, { role: 'assistant', content: '', isStreaming: true, step: 'thinking' }]);
 
     try {
       const stream = await GeminiService.chatWithAgentStream(userMsg, contextAssets);
-      let fullText = "";
-      let hasFunctionCall = false;
+      let accumulatedText = "";
 
       for await (const chunk of stream) {
-        // 检查是否有函数调用
-        if (chunk.candidates?.[0]?.content?.parts?.some(p => p.functionCall)) {
-          hasFunctionCall = true;
-          const functionCalls = chunk.candidates[0].content.parts
-            .filter(p => p.functionCall)
-            .map(p => p.functionCall!);
+        // 1. 处理流式文本内容
+        const chunkText = chunk.text;
+        if (chunkText) {
+          accumulatedText += chunkText;
+          setMessages(prev => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            // 只有当不是正在执行工具时才更新文本，或者如果是在工具执行后的文本补充
+            next[next.length - 1] = { 
+              ...last, 
+              content: accumulatedText, 
+              step: 'writing',
+              isStreaming: true 
+            };
+            return next;
+          });
+        }
 
+        // 2. 处理工具调用（Function Calling）
+        const parts = chunk.candidates?.[0]?.content?.parts || [];
+        const functionCalls = parts.filter(p => p.functionCall).map(p => p.functionCall!);
+
+        if (functionCalls.length > 0) {
           for (const call of functionCalls) {
             const { name, args } = call;
+            
+            // 更新 UI 状态为执行中
             setMessages(prev => {
-              const last = [...prev];
-              last[last.length - 1] = { 
+              const next = [...prev];
+              next[next.length - 1] = { 
                 role: 'assistant', 
-                content: `🎬 **正在创作:** \`${name}\`...`, 
+                content: `🎬 **任务分发中:** \`${name}\`...`, 
                 isExecuting: true, 
                 step: 'generating' 
               };
-              return last;
+              return next;
             });
 
             try {
@@ -100,42 +118,31 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
                 onAddAsset(newAsset);
                 setMessages(prev => {
                   const updated = [...prev];
-                  updated[updated.length - 1] = { ...updated[updated.length - 1], isExecuting: false, content: `✨ **已完成:** ${newAsset?.title}`, step: 'done' };
+                  updated[updated.length - 1] = { 
+                    role: 'assistant', 
+                    content: `✨ **制作完成:** [${newAsset?.title}] 已添加到画布。`, 
+                    isExecuting: false,
+                    step: 'done' 
+                  };
                   return updated;
                 });
               }
             } catch (err) {
-              setMessages(prev => [...prev, { role: 'assistant', content: `❌ 任务中断: ${name}` }]);
+              setMessages(prev => [...prev, { role: 'assistant', content: `❌ 任务失败: ${name}` }]);
             }
           }
-        }
-
-        // 处理普通文本流
-        const text = chunk.text;
-        if (text) {
-          fullText += text;
-          setMessages(prev => {
-            const last = [...prev];
-            const lastMsg = last[last.length - 1];
-            // 如果上一个状态是工具执行中，且现在收到了文本，说明是工具执行后的总结文本，需要新开一条消息或者覆盖执行中状态
-            if (lastMsg.isExecuting) {
-              return [...prev, { role: 'assistant', content: fullText, isStreaming: true, step: 'writing' }];
-            }
-            last[last.length - 1] = { role: 'assistant', content: fullText, isStreaming: true, step: 'writing' };
-            return last;
-          });
         }
       }
 
       // 结束流状态
       setMessages(prev => {
-        const last = [...prev];
-        last[last.length - 1] = { ...last[last.length - 1], isStreaming: false };
-        return last;
+        const next = [...prev];
+        next[next.length - 1] = { ...next[next.length - 1], isStreaming: false };
+        return next;
       });
 
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 系统错误: ${err.message}` }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 连接中断: ${err.message}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -206,7 +213,6 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
       </div>
 
       <div className="px-5 pb-5 pt-2 space-y-4">
-        {/* Promo Banner */}
         <div className="bg-[#E3F2FD]/60 rounded-xl px-4 py-2.5 flex items-center justify-between border border-[#BBDEFB]/30">
            <div className="flex items-center gap-2.5">
               <i className="fa-solid fa-gift text-[#1976D2] text-[13px]"></i>
@@ -215,7 +221,6 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
            <button className="text-[#1976D2] opacity-40 hover:opacity-100"><i className="fa-solid fa-xmark text-[12px]"></i></button>
         </div>
 
-        {/* Input UI */}
         <div className="bg-[#F8F9FA] rounded-[1.4rem] p-4 border border-transparent focus-within:bg-white focus-within:border-[#E9ECEF] transition-all duration-300">
           <textarea
             value={input}

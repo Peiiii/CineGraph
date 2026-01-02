@@ -49,13 +49,16 @@ export class GeminiService {
 
   static async chatWithAgentStream(message: string, contextAssets: Asset[]) {
     const ai = this.getClient();
+    // 使用 gemini-3-flash-preview 获得更快的流式响应速度
     return ai.models.generateContentStream({
-      model: "gemini-3-pro-preview",
+      model: "gemini-3-flash-preview",
       contents: [{ role: 'user', parts: [{ text: message }] }],
       config: {
         systemInstruction: `你是一位全能的 AI 电影导演。你的目标是通过调用工具来协助用户进行电影全流程创作。
-        工作流建议：1. 剧本 2. 分镜 3. 动态。当前工作区资产：${JSON.stringify(contextAssets.map(a => ({id: a.id, type: a.type, title: a.title})))}。`,
-        tools: [{ functionDeclarations: filmTools }]
+        工作流建议：1. 剧本 2. 分镜 3. 动态。当前工作区资产：${JSON.stringify(contextAssets.map(a => ({id: a.id, type: a.type, title: a.title})))}。
+        请保持回复简洁专业，并直接开始流式输出。`,
+        tools: [{ functionDeclarations: filmTools }],
+        thinkingConfig: { thinkingBudget: 0 } // 禁用深度思考以实现即时流式输出
       }
     });
   }
