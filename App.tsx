@@ -30,7 +30,7 @@ const App: React.FC = () => {
       {/* 极细网格背景 */}
       <div className="absolute inset-0 canvas-dot-grid opacity-[0.2] pointer-events-none"></div>
 
-      {/* Top Left: Logo & Project Name - 边距收紧 */}
+      {/* Top Left: Logo & Project Name */}
       <div className="absolute top-4 left-5 z-50 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full bg-black flex items-center justify-center shadow-lg">
           <i className="fa-solid fa-clapperboard text-[12px] text-white"></i>
@@ -41,8 +41,8 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Top Right: Zoom Control - 紧贴侧边栏左侧 */}
-      <div className="absolute top-4 right-[508px] z-50 flex items-center bg-white/80 backdrop-blur-md border border-[#E9ECEF] rounded-full px-1 py-1 sharp-shadow">
+      {/* Top Right: Zoom Control - 紧贴 Agent 面板边缘 */}
+      <div className="absolute top-4 right-[492px] z-50 flex items-center bg-white/80 backdrop-blur-md border border-[#E9ECEF] rounded-full px-1 py-1 sharp-shadow">
         <button className="w-7 h-7 text-[#ADB5BD] hover:bg-black/5 rounded-full transition-all flex items-center justify-center">
           <i className="fas fa-minus text-[9px]"></i>
         </button>
@@ -52,7 +52,7 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      {/* Left Sidebar: 悬浮工具栏 - 位置收紧 */}
+      {/* Left Sidebar: 悬浮工具栏 */}
       <div className="absolute left-5 top-1/2 -translate-y-1/2 w-[58px] flex flex-col items-center py-5 bg-white border border-[#E9ECEF] rounded-[2.2rem] sharp-shadow z-50 gap-1.5">
         {[
           { id: 'all', icon: 'fa-solid fa-location-arrow', rot: '-rotate-45' },
@@ -81,8 +81,8 @@ const App: React.FC = () => {
         ))}
       </div>
 
-      {/* Bottom Left: Layers & Credits - 位置收紧 */}
-      <div className="absolute bottom-5 left-5 z-50 flex items-center gap-5">
+      {/* Bottom Left: Layers & Credits */}
+      <div className="absolute bottom-4 left-5 z-50 flex items-center gap-5">
         <button className="w-8 h-8 rounded-[10px] bg-white border border-[#E9ECEF] flex items-center justify-center text-[#ADB5BD] hover:text-black sharp-shadow transition-all">
           <i className="fa-solid fa-layer-group text-[12px]"></i>
         </button>
@@ -94,8 +94,8 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Canvas - 调整填充以平衡缩小后的边距 */}
-      <main className="absolute inset-0 overflow-auto p-32 custom-scrollbar">
+      {/* Main Canvas */}
+      <main className="absolute inset-0 overflow-auto p-32 pr-[500px] custom-scrollbar">
         {assets.length === 0 ? (
           <div className="h-full flex items-center justify-center select-none pointer-events-none opacity-[0.02]">
              <div className="text-center">
@@ -118,8 +118,8 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Agent Panel - 位置收紧 */}
-      <div className="absolute right-5 top-4 bottom-5 w-[480px] z-50">
+      {/* Agent Panel - 缩小边距至 12px，移除阴影效果，使其平铺 */}
+      <div className="absolute right-3 top-3 bottom-3 w-[472px] z-50">
         <AgentSidebar 
           contextAssets={assets.filter(a => selectedIds.has(a.id))} 
           onAddAsset={(a) => setAssets(prev => [a, ...prev])}
