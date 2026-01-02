@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import AssetCard from './components/AssetCard';
 import AgentSidebar from './components/AgentSidebar';
 import { useAssetStore } from './stores/useAssetStore';
@@ -9,6 +9,7 @@ const AppContent: React.FC = () => {
   const presenter = usePresenter();
   const { assets, selectedIds, activeTab, viewport } = useAssetStore();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [isPanning, setIsPanning] = useState(false);
 
   const filteredAssets = assets.filter(a => {
     if (activeTab === 'all') return true;
@@ -46,10 +47,14 @@ const AppContent: React.FC = () => {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // 只有当点击的是画布背景（canvas-dot-grid）或者按住 Alt 时允许平移
-    const isBackground = e.target === canvasRef.current || (e.target as HTMLElement).classList.contains('canvas-dot-grid');
+    // 判定点击的是否为背景区域：
+    // 1. 点击的是容器本身 (canvasRef.current)
+    // 2. 点击的是变换层 (canvas-viewport-layer)
+    const target = e.target as HTMLElement;
+    const isBackground = target === canvasRef.current || target.classList.contains('canvas-viewport-layer');
     
     if (e.button === 0 && (isBackground || e.altKey)) {
+      setIsPanning(true);
       const startX = e.clientX - viewport.x;
       const startY = e.clientY - viewport.y;
 
@@ -61,6 +66,7 @@ const AppContent: React.FC = () => {
       };
 
       const onMouseUp = () => {
+        setIsPanning(false);
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
       };
@@ -72,7 +78,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div 
-      className="relative h-screen w-screen bg-[#F8F9FA] overflow-hidden cursor-crosshair"
+      className={`relative h-screen w-screen bg-[#F8F9FA] overflow-hidden transition-colors duration-500 ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       ref={canvasRef}
@@ -88,7 +94,7 @@ const AppContent: React.FC = () => {
 
       {/* Viewport Transform Layer */}
       <div 
-        className="absolute inset-0 transition-transform duration-75 ease-out origin-top-left"
+        className="absolute inset-0 transition-transform duration-75 ease-out origin-top-left canvas-viewport-layer"
         style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}
       >
         {filteredAssets.map(asset => (
@@ -100,7 +106,7 @@ const AppContent: React.FC = () => {
         ))}
       </div>
 
-      {/* Zoom HUD: 避开右侧 AgentSidebar (460px)，居中于工作区 */}
+      {/* Zoom HUD */}
       <div 
         className="absolute bottom-6 z-[100] flex items-center bg-white/90 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1.5 sharp-shadow gap-2"
         style={{ left: 'calc(50% - 230px)', transform: 'translateX(-50%)' }}
