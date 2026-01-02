@@ -1,19 +1,13 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import AssetCard from './components/AssetCard';
 import AgentSidebar from './components/AgentSidebar';
-import { Asset } from './types';
+import { useAssetStore } from './stores/useAssetStore';
+import { usePresenter, PresenterProvider } from './PresenterContext';
 
-const App: React.FC = () => {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'all' | 'media' | 'video' | 'text' | 'scenes'>('all');
-
-  const toggleSelection = (id: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setSelectedIds(next);
-  };
+const AppContent: React.FC = () => {
+  const presenter = usePresenter();
+  const { assets, selectedIds, activeTab } = useAssetStore();
 
   const filteredAssets = assets.filter(a => {
     if (activeTab === 'all') return true;
@@ -26,8 +20,6 @@ const App: React.FC = () => {
 
   return (
     <div className="relative h-screen w-screen bg-[#F8F9FA] overflow-hidden font-['Plus_Jakarta_Sans']">
-      
-      {/* 极细网格背景 */}
       <div className="absolute inset-0 canvas-dot-grid opacity-[0.2] pointer-events-none"></div>
 
       {/* Top Left: Logo & Project Name */}
@@ -41,7 +33,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Top Right: Zoom Control - 紧贴 Agent 面板边缘 */}
+      {/* Top Right: Zoom Control */}
       <div className="absolute top-4 right-[492px] z-50 flex items-center bg-white/80 backdrop-blur-md border border-[#E9ECEF] rounded-full px-1 py-1 sharp-shadow">
         <button className="w-7 h-7 text-[#ADB5BD] hover:bg-black/5 rounded-full transition-all flex items-center justify-center">
           <i className="fas fa-minus text-[9px]"></i>
@@ -69,7 +61,7 @@ const App: React.FC = () => {
           ) : (
             <button 
               key={item.id}
-              onClick={() => item.id !== 'add' && item.id !== 'pen' && setActiveTab(item.id)}
+              onClick={() => item.id !== 'add' && item.id !== 'pen' && presenter.assetManager.setActiveTab(item.id)}
               className={`w-10 h-10 rounded-[12px] flex items-center justify-center transition-all relative ${
                 activeTab === item.id ? 'bg-[#F0F2F5] text-black' : 'text-[#ADB5BD] hover:bg-[#F0F2F5] hover:text-[#1A1C1E]'
               }`}
@@ -79,19 +71,6 @@ const App: React.FC = () => {
             </button>
           )
         ))}
-      </div>
-
-      {/* Bottom Left: Layers & Credits */}
-      <div className="absolute bottom-4 left-5 z-50 flex items-center gap-5">
-        <button className="w-8 h-8 rounded-[10px] bg-white border border-[#E9ECEF] flex items-center justify-center text-[#ADB5BD] hover:text-black sharp-shadow transition-all">
-          <i className="fa-solid fa-layer-group text-[12px]"></i>
-        </button>
-        <div className="flex items-center gap-3">
-           <div className="w-7 h-7 rounded-full bg-black flex items-center justify-center text-[10px] text-white font-black shadow-md">W</div>
-           <div className="flex items-center gap-1.5 text-[10px] font-black text-[#8E8E93]">
-             <i className="fas fa-bolt text-amber-400"></i> 88
-           </div>
-        </div>
       </div>
 
       {/* Main Canvas */}
@@ -110,23 +89,26 @@ const App: React.FC = () => {
                 key={asset.id} 
                 asset={asset} 
                 selected={selectedIds.has(asset.id)}
-                onSelect={toggleSelection}
-                onRemove={(id) => setAssets(prev => prev.filter(a => a.id !== id))}
+                onSelect={presenter.assetManager.toggleSelection}
+                onRemove={presenter.assetManager.removeAsset}
               />
             ))}
           </div>
         )}
       </main>
 
-      {/* Agent Panel - 缩小边距至 12px，移除阴影效果，使其平铺 */}
+      {/* Agent Panel */}
       <div className="absolute right-3 top-3 bottom-3 w-[472px] z-50">
-        <AgentSidebar 
-          contextAssets={assets.filter(a => selectedIds.has(a.id))} 
-          onAddAsset={(a) => setAssets(prev => [a, ...prev])}
-        />
+        <AgentSidebar />
       </div>
     </div>
   );
 };
+
+const App: React.FC = () => (
+  <PresenterProvider>
+    <AppContent />
+  </PresenterProvider>
+);
 
 export default App;

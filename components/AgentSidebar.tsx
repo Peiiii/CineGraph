@@ -1,16 +1,8 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Asset, AssetType } from '../types';
-import { GeminiService } from '../services/geminiService';
+import React, { useRef, useEffect } from 'react';
+import { useChatStore } from '../stores/useChatStore';
+import { usePresenter } from '../PresenterContext';
 import { marked } from 'marked';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  isExecuting?: boolean;
-  isStreaming?: boolean;
-  step?: 'thinking' | 'writing' | 'generating' | 'done';
-}
 
 const SuggestionCard = ({ title, desc, images }: { title: string, desc: string, images: string[] }) => (
   <div className="group relative bg-[#F8F9FA] hover:bg-white border border-transparent hover:border-[#E9ECEF] rounded-[1.2rem] p-5 pr-28 transition-all cursor-pointer overflow-hidden min-h-[95px] flex flex-col justify-center">
@@ -32,121 +24,16 @@ const SuggestionCard = ({ title, desc, images }: { title: string, desc: string, 
   </div>
 );
 
-const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) => void }> = ({ contextAssets, onAddAsset }) => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+const AgentSidebar: React.FC = () => {
+  const presenter = usePresenter();
+  const { messages, input, isTyping } = useChatStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 自动滚动到底部
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
-
-  const handleSend = async () => {
-    if (!input.trim() || isTyping) return;
-    const userMsg = input.trim();
-    setInput('');
-    
-    // 初始化消息列表
-    setMessages(prev => [
-      ...prev, 
-      { role: 'user', content: userMsg },
-      { role: 'assistant', content: '', isStreaming: true, step: 'thinking' }
-    ]);
-    setIsTyping(true);
-
-    try {
-      const stream = await GeminiService.chatWithAgentStream(userMsg, contextAssets);
-      let accumulatedText = "";
-
-      for await (const chunk of stream) {
-        // 1. 处理流式文本内容
-        const chunkText = chunk.text;
-        if (chunkText) {
-          accumulatedText += chunkText;
-          setMessages(prev => {
-            const next = [...prev];
-            const last = next[next.length - 1];
-            // 只有当不是正在执行工具时才更新文本，或者如果是在工具执行后的文本补充
-            next[next.length - 1] = { 
-              ...last, 
-              content: accumulatedText, 
-              step: 'writing',
-              isStreaming: true 
-            };
-            return next;
-          });
-        }
-
-        // 2. 处理工具调用（Function Calling）
-        const parts = chunk.candidates?.[0]?.content?.parts || [];
-        const functionCalls = parts.filter(p => p.functionCall).map(p => p.functionCall!);
-
-        if (functionCalls.length > 0) {
-          for (const call of functionCalls) {
-            const { name, args } = call;
-            
-            // 更新 UI 状态为执行中
-            setMessages(prev => {
-              const next = [...prev];
-              next[next.length - 1] = { 
-                role: 'assistant', 
-                content: `🎬 **任务分发中:** \`${name}\`...`, 
-                isExecuting: true, 
-                step: 'generating' 
-              };
-              return next;
-            });
-
-            try {
-              let newAsset: Asset | null = null;
-              if (name === 'create_visual_shot') {
-                const dataUrl = await GeminiService.generateImage(args.prompt as string);
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'image', content: dataUrl, title: args.title as string || 'AI 视觉分镜', createdAt: Date.now() };
-              } else if (name === 'animate_scene') {
-                const ref = contextAssets.find(a => a.id === args.reference_asset_id) || contextAssets.find(a => a.type === 'image');
-                const videoUrl = await GeminiService.generateVideo(args.prompt as string, ref?.content);
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'video', content: videoUrl, title: 'AI 动态片段', createdAt: Date.now() };
-              } else if (name === 'write_creative_asset') {
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: (args.type as AssetType) || 'text', content: args.content as string, title: args.title as string, createdAt: Date.now() };
-              }
-
-              if (newAsset) {
-                onAddAsset(newAsset);
-                setMessages(prev => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = { 
-                    role: 'assistant', 
-                    content: `✨ **制作完成:** [${newAsset?.title}] 已添加到画布。`, 
-                    isExecuting: false,
-                    step: 'done' 
-                  };
-                  return updated;
-                });
-              }
-            } catch (err) {
-              setMessages(prev => [...prev, { role: 'assistant', content: `❌ 任务失败: ${name}` }]);
-            }
-          }
-        }
-      }
-
-      // 结束流状态
-      setMessages(prev => {
-        const next = [...prev];
-        next[next.length - 1] = { ...next[next.length - 1], isStreaming: false };
-        return next;
-      });
-
-    } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 连接中断: ${err.message}` }]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
 
   const IconButton = ({ icon, className = "" }: { icon: string, className?: string }) => (
     <button className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all text-[#ADB5BD] hover:bg-[#F0F2F5] hover:text-black ${className}`}>
@@ -178,7 +65,6 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
               <SuggestionCard title="角色设定 (Cast)" desc="设计一个未来世界的反叛者..." images={["https://images.unsplash.com/photo-1542332213-9b5a5a3fad35?w=200", "https://images.unsplash.com/photo-1514539079130-25950c84af65?w=200", "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200"]} />
               <SuggestionCard title="分镜转换 (Board)" desc="将文字剧本视觉化..." images={["https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200", "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200", "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200"]} />
             </div>
-            <button className="flex items-center gap-2 text-[11px] text-[#ADB5BD] hover:text-black transition-colors font-bold"><i className="fa-solid fa-rotate text-[10px]"></i> 切换</button>
           </div>
         ) : (
           messages.map((msg, i) => (
@@ -213,19 +99,12 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
       </div>
 
       <div className="px-5 pb-5 pt-2 space-y-4">
-        <div className="bg-[#E3F2FD]/60 rounded-xl px-4 py-2.5 flex items-center justify-between border border-[#BBDEFB]/30">
-           <div className="flex items-center gap-2.5">
-              <i className="fa-solid fa-gift text-[#1976D2] text-[13px]"></i>
-              <span className="text-[11px] font-bold text-[#1976D2]">升级会员，Nano Banana Pro 免费365天！</span>
-           </div>
-           <button className="text-[#1976D2] opacity-40 hover:opacity-100"><i className="fa-solid fa-xmark text-[12px]"></i></button>
-        </div>
-
+        {/* Input UI */}
         <div className="bg-[#F8F9FA] rounded-[1.4rem] p-4 border border-transparent focus-within:bg-white focus-within:border-[#E9ECEF] transition-all duration-300">
           <textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
+            onChange={(e) => presenter.chatManager.setInput(e.target.value)}
+            onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); presenter.chatManager.sendMessage(); }}}
             placeholder="输入创作指令..."
             className="w-full bg-transparent px-1 text-[13px] focus:outline-none resize-none h-14 placeholder:text-[#ADB5BD] text-black font-medium"
           />
@@ -239,16 +118,9 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
                </button>
             </div>
 
-            <div className="flex items-center gap-3">
-               <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-white border border-black/[0.04]">
-                 <IconButton icon="fa-regular fa-lightbulb" className="!w-6 !h-6 !text-[12px]" />
-                 <IconButton icon="fa-solid fa-bolt" className="!w-6 !h-6 !text-[12px]" />
-                 <IconButton icon="fa-solid fa-globe" className="!w-6 !h-6 !text-[12px]" />
-                 <IconButton icon="fa-solid fa-cube" className="!w-6 !h-6 !text-[12px]" />
-               </div>
-               
+            <div className="flex items-center justify-between">
                <button 
-                 onClick={handleSend}
+                 onClick={() => presenter.chatManager.sendMessage()}
                  disabled={isTyping}
                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90 ${isTyping ? 'bg-gray-100 text-gray-400' : 'bg-[#C4C4C4] hover:bg-black text-white'}`}
                >
