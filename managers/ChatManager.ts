@@ -2,7 +2,7 @@
 import { useChatStore } from '../stores/useChatStore';
 import { useAssetStore } from '../stores/useAssetStore';
 import { GeminiService } from '../services/geminiService';
-import { Asset, AssetType } from '../types';
+import { globalPresenter } from '../Presenter';
 
 export class ChatManager {
   setInput = (val: string) => {
@@ -14,7 +14,6 @@ export class ChatManager {
     if (!input.trim() || isTyping) return;
 
     const userMsg = input.trim();
-    // 动态获取当前选中的资产作为 AI 上下文
     const { assets, selectedIds } = useAssetStore.getState();
     const contextAssets = assets.filter(a => selectedIds.has(a.id));
 
@@ -31,81 +30,22 @@ export class ChatManager {
       let accumulatedText = "";
 
       for await (const chunk of stream) {
-        const chunkText = chunk.text;
-        if (chunkText) {
-          accumulatedText += chunkText;
+        if (chunk.text) {
+          accumulatedText += chunk.text;
           setMessages(prev => {
             const next = [...prev];
-            const last = next[next.length - 1];
-            next[next.length - 1] = { 
-              ...last, 
-              content: accumulatedText, 
-              step: 'writing',
-              isStreaming: true 
-            };
+            next[next.length - 1] = { ...next[next.length - 1], content: accumulatedText, step: 'writing', isStreaming: true };
             return next;
           });
         }
 
         const parts = chunk.candidates?.[0]?.content?.parts || [];
-        const functionCalls = parts.filter(p => p.functionCall).map(p => p.functionCall!);
+        const calls = parts.filter(p => p.functionCall).map(p => p.functionCall!);
 
-        if (functionCalls.length > 0) {
-          for (const call of functionCalls) {
-            const { name, args } = call;
-            
-            setMessages(prev => {
-              const next = [...prev];
-              next[next.length - 1] = { 
-                role: 'assistant', 
-                content: `🎬 **导演指令下达:** \`${name}\`...`, 
-                isExecuting: true, 
-                step: 'generating' 
-              };
-              return next;
-            });
-
-            try {
-              let newAsset: Asset | null = null;
-              // Calculate default position based on current viewport to satisfy Asset type requirements
-              const { viewport } = useAssetStore.getState();
-              const defaultPosition = {
-                x: -viewport.x / viewport.zoom + (window.innerWidth / 2) / viewport.zoom - 200,
-                y: -viewport.y / viewport.zoom + (window.innerHeight / 2) / viewport.zoom - 150,
-              };
-
-              if (name === 'create_visual_shot') {
-                const dataUrl = await GeminiService.generateImage(args.prompt as string);
-                // Fix: Added missing position property
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'image', content: dataUrl, title: args.title as string || 'AI 视觉分镜', createdAt: Date.now(), position: defaultPosition };
-              } else if (name === 'animate_scene') {
-                const ref = contextAssets.find(a => a.id === args.reference_asset_id) || contextAssets.find(a => a.type === 'image');
-                const videoUrl = await GeminiService.generateVideo(args.prompt as string, ref?.content);
-                // Fix: Added missing position property
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'video', content: videoUrl, title: 'AI 动态片段', createdAt: Date.now(), position: defaultPosition };
-              } else if (name === 'write_creative_asset') {
-                // Fix: Added missing position property
-                newAsset = { id: Math.random().toString(36).substr(2, 9), type: (args.type as AssetType) || 'text', content: args.content as string, title: args.title as string, createdAt: Date.now(), position: defaultPosition };
-              }
-
-              if (newAsset) {
-                // 直接通过 Store 更新
-                useAssetStore.getState().setAssets(prev => [newAsset!, ...prev]);
-                
-                setMessages(prev => {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = { 
-                    role: 'assistant', 
-                    content: `✨ **制作完成:** [${newAsset?.title}] 已添加到工作区。`, 
-                    isExecuting: false,
-                    step: 'done' 
-                  };
-                  return updated;
-                });
-              }
-            } catch (err) {
-              setMessages(prev => [...prev, { role: 'assistant', content: `❌ 创意执行失败: ${name}` }]);
-            }
+        // 委托给 ActionManager 执行具体资产创建逻辑
+        if (calls.length > 0) {
+          for (const call of calls) {
+            await globalPresenter.actionManager.executeFunctionCall(call.name, call.args, contextAssets);
           }
         }
       }

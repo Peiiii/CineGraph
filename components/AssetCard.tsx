@@ -3,7 +3,7 @@ import React, { useRef, useState } from 'react';
 import { Asset } from '../types';
 import { usePresenter } from '../PresenterContext';
 import { useAssetStore } from '../stores/useAssetStore';
-import { marked } from 'marked';
+import { AssetRenderer } from './canvas/AssetRenderer';
 
 interface AssetCardProps {
   asset: Asset;
@@ -17,8 +17,9 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
   const dragStart = useRef({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (e.button !== 0) return; // 仅左键拖拽
+    if (e.button !== 0) return;
     e.stopPropagation();
+    
     setIsDragging(true);
     dragStart.current = {
       x: e.clientX - asset.position.x * viewport.zoom,
@@ -26,6 +27,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
     };
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
+      // 拖拽过程中必须考虑 viewport.zoom 的缩放补偿
       const newX = (moveEvent.clientX - dragStart.current.x) / viewport.zoom;
       const newY = (moveEvent.clientY - dragStart.current.y) / viewport.zoom;
       presenter.assetManager.updateAssetPosition(asset.id, newX, newY);
@@ -50,26 +52,17 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
         left: asset.position.x, 
         top: asset.position.y,
         position: 'absolute',
-        zIndex: isDragging ? 1000 : 1
+        zIndex: isDragging ? 1000 : (selected ? 10 : 1)
       }}
-      className={`group flex flex-col gap-4 cursor-grab active:cursor-grabbing w-[420px] select-none`}
+      className={`group flex flex-col gap-4 cursor-grab active:cursor-grabbing w-[420px] select-none transition-shadow ${isDragging ? 'opacity-90' : 'opacity-100'}`}
     >
       <div className={`relative rounded-[2rem] overflow-hidden transition-all duration-300 ${
         selected 
         ? 'ring-[6px] ring-[#0066FF] shadow-[0_40px_80px_-12px_rgba(0,102,255,0.25)]' 
         : 'bg-white border border-[#E9ECEF] sharp-shadow'
       }`}>
-        {asset.type === 'image' && (
-          <img src={asset.content} alt={asset.title} className="w-full object-cover pointer-events-none" />
-        )}
-        {asset.type === 'video' && (
-          <video src={asset.content} className="w-full object-cover" controls={false} muted loop autoPlay />
-        )}
-        {asset.type === 'text' && (
-          <div className="p-8 bg-white min-h-[200px] prose prose-sm prose-slate max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: marked.parse(asset.content) }} />
-          </div>
-        )}
+        {/* 将复杂的渲染逻辑抽离到 AssetRenderer */}
+        <AssetRenderer asset={asset} />
         
         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button 
