@@ -1,16 +1,10 @@
 
-import { useChatStore, Message } from '../stores/useChatStore';
+import { useChatStore } from '../stores/useChatStore';
+import { useAssetStore } from '../stores/useAssetStore';
 import { GeminiService } from '../services/geminiService';
-import { AssetManager } from './AssetManager';
 import { Asset, AssetType } from '../types';
 
 export class ChatManager {
-  private assetManager: AssetManager;
-
-  constructor(assetManager: AssetManager) {
-    this.assetManager = assetManager;
-  }
-
   setInput = (val: string) => {
     useChatStore.getState().setInput(val);
   };
@@ -20,7 +14,9 @@ export class ChatManager {
     if (!input.trim() || isTyping) return;
 
     const userMsg = input.trim();
-    const contextAssets = useChatStore.getState() ? this.assetManager.getSelectedAssets() : [];
+    // 动态获取当前选中的资产作为 AI 上下文
+    const { assets, selectedIds } = useAssetStore.getState();
+    const contextAssets = assets.filter(a => selectedIds.has(a.id));
 
     setInput('');
     setMessages((prev) => [
@@ -62,7 +58,7 @@ export class ChatManager {
               const next = [...prev];
               next[next.length - 1] = { 
                 role: 'assistant', 
-                content: `🎬 **任务分发中:** \`${name}\`...`, 
+                content: `🎬 **导演指令下达:** \`${name}\`...`, 
                 isExecuting: true, 
                 step: 'generating' 
               };
@@ -83,12 +79,14 @@ export class ChatManager {
               }
 
               if (newAsset) {
-                this.assetManager.addAsset(newAsset);
+                // 直接通过 Store 更新
+                useAssetStore.getState().setAssets(prev => [newAsset!, ...prev]);
+                
                 setMessages(prev => {
                   const updated = [...prev];
                   updated[updated.length - 1] = { 
                     role: 'assistant', 
-                    content: `✨ **制作完成:** [${newAsset?.title}] 已添加到画布。`, 
+                    content: `✨ **制作完成:** [${newAsset?.title}] 已添加到工作区。`, 
                     isExecuting: false,
                     step: 'done' 
                   };
@@ -96,7 +94,7 @@ export class ChatManager {
                 });
               }
             } catch (err) {
-              setMessages(prev => [...prev, { role: 'assistant', content: `❌ 任务失败: ${name}` }]);
+              setMessages(prev => [...prev, { role: 'assistant', content: `❌ 创意执行失败: ${name}` }]);
             }
           }
         }
@@ -109,7 +107,7 @@ export class ChatManager {
       });
 
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 连接中断: ${err.message}` }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 通信异常: ${err.message}` }]);
     } finally {
       setIsTyping(false);
     }
