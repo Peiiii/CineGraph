@@ -47,29 +47,17 @@ export class GeminiService {
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
-  static async chatWithAgent(message: string, contextAssets: Asset[]) {
+  static async chatWithAgentStream(message: string, contextAssets: Asset[]) {
     const ai = this.getClient();
-    // 使用 Pro 模型以获得更稳定的工具调用能力
-    const response = await ai.models.generateContent({
+    return ai.models.generateContentStream({
       model: "gemini-3-pro-preview",
       contents: [{ role: 'user', parts: [{ text: message }] }],
       config: {
-        systemInstruction: `你是一位全能的 AI 电影导演。
-        你的目标是通过调用工具来协助用户进行电影全流程创作。
-        
-        工作流建议：
-        1. 先通过 write_creative_asset 确定角色设定或剧本。
-        2. 调用 create_visual_shot 将剧本转化为视觉分镜。
-        3. 调用 animate_scene 将关键分镜转化为视频。
-        
-        当前工作区资产数量：${contextAssets.length}。
-        如果用户提到“这个”，优先参考选中的资产：${JSON.stringify(contextAssets.map(a => ({id: a.id, type: a.type, title: a.title})))}。
-        请在调用工具后，向用户简要解释你的创作意图。`,
+        systemInstruction: `你是一位全能的 AI 电影导演。你的目标是通过调用工具来协助用户进行电影全流程创作。
+        工作流建议：1. 剧本 2. 分镜 3. 动态。当前工作区资产：${JSON.stringify(contextAssets.map(a => ({id: a.id, type: a.type, title: a.title})))}。`,
         tools: [{ functionDeclarations: filmTools }]
       }
     });
-
-    return response;
   }
 
   static async generateImage(prompt: string) {
@@ -103,7 +91,6 @@ export class GeminiService {
     }
 
     let op = await ai.models.generateVideos(config);
-    
     while (!op.done) {
       await new Promise(r => setTimeout(r, 8000));
       op = await ai.operations.getVideosOperation({ operation: op });

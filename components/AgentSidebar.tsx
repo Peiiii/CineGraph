@@ -8,7 +8,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   isExecuting?: boolean;
-  toolInfo?: string;
+  isStreaming?: boolean;
   step?: 'thinking' | 'writing' | 'generating' | 'done';
 }
 
@@ -39,7 +39,12 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   }, [messages, isTyping]);
 
   const handleSend = async () => {
@@ -49,50 +54,86 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     setIsTyping(true);
 
+    // 初始等待占位消息
+    setMessages(prev => [...prev, { role: 'assistant', content: '', isStreaming: true, step: 'thinking' }]);
+
     try {
-      const response = await GeminiService.chatWithAgent(userMsg, contextAssets);
-      
-      if (response.functionCalls && response.functionCalls.length > 0) {
-        for (const call of response.functionCalls) {
-          const { name, args } = call;
-          
-          setMessages(prev => [...prev, { 
-            role: 'assistant', 
-            content: `🎬 **正在创作:** \`${name}\`...`, 
-            isExecuting: true,
-            step: 'generating'
-          }]);
+      const stream = await GeminiService.chatWithAgentStream(userMsg, contextAssets);
+      let fullText = "";
+      let hasFunctionCall = false;
 
-          try {
-            let newAsset: Asset | null = null;
-            if (name === 'create_visual_shot') {
-              const dataUrl = await GeminiService.generateImage(args.prompt as string);
-              newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'image', content: dataUrl, title: args.title as string || 'AI 视觉分镜', createdAt: Date.now() };
-            } else if (name === 'animate_scene') {
-              const ref = contextAssets.find(a => a.id === args.reference_asset_id) || contextAssets.find(a => a.type === 'image');
-              const videoUrl = await GeminiService.generateVideo(args.prompt as string, ref?.content);
-              newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'video', content: videoUrl, title: 'AI 动态片段', createdAt: Date.now() };
-            } else if (name === 'write_creative_asset') {
-              newAsset = { id: Math.random().toString(36).substr(2, 9), type: (args.type as AssetType) || 'text', content: args.content as string, title: args.title as string, createdAt: Date.now() };
-            }
+      for await (const chunk of stream) {
+        // 检查是否有函数调用
+        if (chunk.candidates?.[0]?.content?.parts?.some(p => p.functionCall)) {
+          hasFunctionCall = true;
+          const functionCalls = chunk.candidates[0].content.parts
+            .filter(p => p.functionCall)
+            .map(p => p.functionCall!);
 
-            if (newAsset) {
-              onAddAsset(newAsset);
-              setMessages(prev => {
-                const updated = [...prev];
-                updated[updated.length - 1] = { ...updated[updated.length - 1], isExecuting: false, content: `✨ **已完成:** ${newAsset?.title}`, step: 'done' };
-                return updated;
-              });
+          for (const call of functionCalls) {
+            const { name, args } = call;
+            setMessages(prev => {
+              const last = [...prev];
+              last[last.length - 1] = { 
+                role: 'assistant', 
+                content: `🎬 **正在创作:** \`${name}\`...`, 
+                isExecuting: true, 
+                step: 'generating' 
+              };
+              return last;
+            });
+
+            try {
+              let newAsset: Asset | null = null;
+              if (name === 'create_visual_shot') {
+                const dataUrl = await GeminiService.generateImage(args.prompt as string);
+                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'image', content: dataUrl, title: args.title as string || 'AI 视觉分镜', createdAt: Date.now() };
+              } else if (name === 'animate_scene') {
+                const ref = contextAssets.find(a => a.id === args.reference_asset_id) || contextAssets.find(a => a.type === 'image');
+                const videoUrl = await GeminiService.generateVideo(args.prompt as string, ref?.content);
+                newAsset = { id: Math.random().toString(36).substr(2, 9), type: 'video', content: videoUrl, title: 'AI 动态片段', createdAt: Date.now() };
+              } else if (name === 'write_creative_asset') {
+                newAsset = { id: Math.random().toString(36).substr(2, 9), type: (args.type as AssetType) || 'text', content: args.content as string, title: args.title as string, createdAt: Date.now() };
+              }
+
+              if (newAsset) {
+                onAddAsset(newAsset);
+                setMessages(prev => {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = { ...updated[updated.length - 1], isExecuting: false, content: `✨ **已完成:** ${newAsset?.title}`, step: 'done' };
+                  return updated;
+                });
+              }
+            } catch (err) {
+              setMessages(prev => [...prev, { role: 'assistant', content: `❌ 任务中断: ${name}` }]);
             }
-          } catch (err) {
-            setMessages(prev => [...prev, { role: 'assistant', content: `❌ 任务中断: ${name}` }]);
           }
+        }
+
+        // 处理普通文本流
+        const text = chunk.text;
+        if (text) {
+          fullText += text;
+          setMessages(prev => {
+            const last = [...prev];
+            const lastMsg = last[last.length - 1];
+            // 如果上一个状态是工具执行中，且现在收到了文本，说明是工具执行后的总结文本，需要新开一条消息或者覆盖执行中状态
+            if (lastMsg.isExecuting) {
+              return [...prev, { role: 'assistant', content: fullText, isStreaming: true, step: 'writing' }];
+            }
+            last[last.length - 1] = { role: 'assistant', content: fullText, isStreaming: true, step: 'writing' };
+            return last;
+          });
         }
       }
 
-      if (response.text) {
-        setMessages(prev => [...prev, { role: 'assistant', content: response.text! }]);
-      }
+      // 结束流状态
+      setMessages(prev => {
+        const last = [...prev];
+        last[last.length - 1] = { ...last[last.length - 1], isStreaming: false };
+        return last;
+      });
+
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 系统错误: ${err.message}` }]);
     } finally {
@@ -108,7 +149,6 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
 
   return (
     <div className="h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1.4rem] overflow-hidden relative">
-      {/* Header - 更加紧凑的顶部区域 */}
       <header className="px-6 py-4 flex items-center justify-end gap-0.5 border-b border-[#F8F9FA]">
         <IconButton icon="fa-regular fa-plus-square" className="!w-7 !h-7" />
         <IconButton icon="fa-solid fa-sliders" className="!w-7 !h-7" />
@@ -131,7 +171,6 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
               <SuggestionCard title="角色设定 (Cast)" desc="设计一个未来世界的反叛者..." images={["https://images.unsplash.com/photo-1542332213-9b5a5a3fad35?w=200", "https://images.unsplash.com/photo-1514539079130-25950c84af65?w=200", "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=200"]} />
               <SuggestionCard title="分镜转换 (Board)" desc="将文字剧本视觉化..." images={["https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=200", "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=200", "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200"]} />
             </div>
-
             <button className="flex items-center gap-2 text-[11px] text-[#ADB5BD] hover:text-black transition-colors font-bold"><i className="fa-solid fa-rotate text-[10px]"></i> 切换</button>
           </div>
         ) : (
@@ -141,15 +180,25 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
                  {msg.role === 'assistant' && <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center text-[8px] text-white font-black">L</div>}
                  <span className="text-[9px] font-black text-[#ADB5BD] uppercase tracking-widest">{msg.role === 'assistant' ? 'Director' : 'Creator'}</span>
               </div>
-              <div className={`text-[13px] leading-relaxed max-w-[92%] ${
+              <div className={`text-[13px] leading-relaxed max-w-[92%] transition-all ${
                 msg.role === 'user' 
                   ? 'bg-[#F8F9FA] px-4 py-2.5 rounded-[1.1rem] rounded-tr-none text-black font-medium' 
                   : msg.isExecuting 
-                    ? 'bg-[#E3F2FD]/40 border border-[#BBDEFB]/40 px-4 py-3 rounded-[1rem] text-[#1976D2] italic flex items-center gap-3 w-full'
+                    ? 'bg-[#E3F2FD]/40 border border-[#BBDEFB]/40 px-4 py-3 rounded-[1rem] text-[#1976D2] italic flex items-center gap-3 w-full shadow-[0_4px_12px_-2px_rgba(25,118,210,0.08)]'
                     : 'text-black font-medium'
               }`}>
                 {msg.isExecuting && <i className="fa-solid fa-circle-notch animate-spin text-[12px]"></i>}
-                <div className="prose prose-sm prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }} />
+                {msg.step === 'thinking' && msg.content === '' && (
+                  <div className="flex gap-1.5 py-1">
+                    <div className="w-1.5 h-1.5 bg-[#ADB5BD] rounded-full animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 bg-[#ADB5BD] rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-1.5 h-1.5 bg-[#ADB5BD] rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                  </div>
+                )}
+                <div className="prose prose-sm prose-slate max-w-none relative">
+                   <div dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }} />
+                   {msg.isStreaming && <span className="inline-block w-1 h-4 bg-[#0066FF] animate-pulse ml-1 align-middle"></span>}
+                </div>
               </div>
             </div>
           ))
@@ -166,7 +215,7 @@ const AgentSidebar: React.FC<{ contextAssets: Asset[], onAddAsset: (a: Asset) =>
            <button className="text-[#1976D2] opacity-40 hover:opacity-100"><i className="fa-solid fa-xmark text-[12px]"></i></button>
         </div>
 
-        {/* Input UI - 保持扁平化风格 */}
+        {/* Input UI */}
         <div className="bg-[#F8F9FA] rounded-[1.4rem] p-4 border border-transparent focus-within:bg-white focus-within:border-[#E9ECEF] transition-all duration-300">
           <textarea
             value={input}
