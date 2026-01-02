@@ -4,6 +4,8 @@ import AssetCard from './components/AssetCard';
 import AgentSidebar from './components/AgentSidebar';
 import { useAssetStore } from './stores/useAssetStore';
 import { usePresenter, PresenterProvider } from './PresenterContext';
+import { Toolbar } from './components/canvas/Toolbar';
+import { ZoomHUD } from './components/canvas/ZoomHUD';
 
 const AppContent: React.FC = () => {
   const presenter = usePresenter();
@@ -47,9 +49,6 @@ const AppContent: React.FC = () => {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // 判定点击的是否为背景区域：
-    // 1. 点击的是容器本身 (canvasRef.current)
-    // 2. 点击的是变换层 (canvas-viewport-layer)
     const target = e.target as HTMLElement;
     const isBackground = target === canvasRef.current || target.classList.contains('canvas-viewport-layer');
     
@@ -106,57 +105,8 @@ const AppContent: React.FC = () => {
         ))}
       </div>
 
-      {/* Zoom HUD */}
-      <div 
-        className="absolute bottom-6 z-[100] flex items-center bg-white/90 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1.5 sharp-shadow gap-2"
-        style={{ left: 'calc(50% - 230px)', transform: 'translateX(-50%)' }}
-      >
-         <button 
-           title="缩小"
-           onClick={() => presenter.assetManager.setViewport(v => ({...v, zoom: v.zoom - 0.1}))} 
-           className="w-8 h-8 rounded-full hover:bg-black/5 transition-all flex items-center justify-center text-[#ADB5BD] hover:text-black"
-         >
-           <i className="fas fa-minus text-[10px]"></i>
-         </button>
-         <div className="min-w-[50px] text-center">
-           <span className="text-[11px] font-black text-black">{Math.round(viewport.zoom * 100)}%</span>
-         </div>
-         <button 
-           title="放大"
-           onClick={() => presenter.assetManager.setViewport(v => ({...v, zoom: v.zoom + 0.1}))} 
-           className="w-8 h-8 rounded-full hover:bg-black/5 transition-all flex items-center justify-center text-[#ADB5BD] hover:text-black"
-         >
-           <i className="fas fa-plus text-[10px]"></i>
-         </button>
-      </div>
-
-      {/* Left Sidebar Toolbar */}
-      <div className="absolute left-5 top-1/2 -translate-y-1/2 w-[60px] flex flex-col items-center py-6 bg-white border border-[#E9ECEF] rounded-[2.5rem] sharp-shadow z-[100] gap-2">
-        {[
-          { id: 'all', icon: 'fa-solid fa-arrow-pointer', label: '选择模式' },
-          { id: 'add', icon: 'fa-solid fa-plus', label: '添加资产' },
-          { id: 'text', icon: 'fa-solid fa-t', label: '文字剧本' },
-          { id: 'sep', isSep: true },
-          { id: 'media', icon: 'fa-regular fa-image', ai: true, label: 'AI 生图' },
-          { id: 'video', icon: 'fa-solid fa-film', ai: true, label: 'AI 视频' },
-        ].map((item: any) => (
-          item.isSep ? (
-            <div key={item.id} className="w-6 h-[1px] bg-[#F0F2F5] my-2"></div>
-          ) : (
-            <button 
-              key={item.id}
-              title={item.label}
-              onClick={() => presenter.assetManager.setActiveTab(item.id)}
-              className={`w-11 h-11 rounded-[16px] flex items-center justify-center transition-all relative ${
-                activeTab === item.id ? 'bg-[#F0F2F5] text-black shadow-inner' : 'text-[#ADB5BD] hover:bg-[#F8F9FA] hover:text-black'
-              }`}
-            >
-              <i className={`${item.icon} text-[16px]`}></i>
-              {item.ai && <i className="fa-solid fa-sparkles text-[6px] absolute top-2 right-2 text-[#0066FF] animate-pulse"></i>}
-            </button>
-          )
-        ))}
-      </div>
+      <ZoomHUD />
+      <Toolbar />
 
       {/* Agent Panel */}
       <div className="absolute right-4 top-4 bottom-4 w-[460px] z-[200]">
