@@ -1,5 +1,5 @@
 
-import { useState, RefObject } from 'react';
+import { useState, RefObject, useEffect } from 'react';
 import { usePresenter } from '../PresenterContext';
 import { useAssetStore } from '../stores/useAssetStore';
 
@@ -8,39 +8,59 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
   const { viewport } = useAssetStore();
   const [isPanning, setIsPanning] = useState(false);
 
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      // 提高缩放敏感度：从 0.001 提升到 0.0025
-      const zoomSpeed = 0.0025; 
-      const delta = -e.deltaY;
-      
-      // 使用平滑的缩放增量
-      const zoomFactor = Math.pow(1.1, (delta * zoomSpeed));
-      const newZoom = viewport.zoom * zoomFactor;
-      
-      const rect = canvasRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      
-      // 以鼠标所在位置为中心缩放
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      
-      const worldX = (mouseX - viewport.x) / viewport.zoom;
-      const worldY = (mouseY - viewport.y) / viewport.zoom;
-      
-      const nextZoom = Math.max(0.05, Math.min(newZoom, 5));
-      const newX = mouseX - worldX * nextZoom;
-      const newY = mouseY - worldY * nextZoom;
-      
-      presenter.assetManager.setViewport({ zoom: nextZoom, x: newX, y: newY });
-    } else {
-      // 普通滚动平移也增加一点点感度
-      presenter.assetManager.setViewport({ 
-        x: viewport.x - e.deltaX * 1.2, 
-        y: viewport.y - e.deltaY * 1.2 
-      });
-    }
-  };
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      // 检查是否是缩放操作（触控板捏合或 Ctrl+滚轮）
+      if (e.ctrlKey || e.metaKey) {
+        // 关键：必须调用 preventDefault 阻止浏览器原生缩放
+        e.preventDefault();
+
+        const zoomSpeed = 0.0025;
+        const delta = -e.deltaY;
+        const zoomFactor = Math.pow(1.1, (delta * zoomSpeed));
+        const newZoom = viewport.zoom * zoomFactor;
+
+        const rect = el.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const worldX = (mouseX - viewport.x) / viewport.zoom;
+        const worldY = (mouseY - viewport.y) / viewport.zoom;
+
+        const nextZoom = Math.max(0.05, Math.min(newZoom, 5));
+        const newX = mouseX - worldX * nextZoom;
+        const newY = mouseY - worldY * nextZoom;
+
+        presenter.assetManager.setViewport({ zoom: nextZoom, x: newX, y: newY });
+      } else {
+        // 普通平移逻辑
+        // 如果是在画布背景上滚动，也可以阻止默认滚动行为，避免触发浏览器前进后退手势
+        // e.preventDefault(); 
+        presenter.assetManager.setViewport({ 
+          x: viewport.x - e.deltaX * 1.2, 
+          y: viewport.y - e.deltaY * 1.2 
+        });
+      }
+    };
+
+    // 针对 Safari 的手势事件（捏合缩放）
+    const onGestureStart = (e: Event) => e.preventDefault();
+    const onGestureChange = (e: Event) => e.preventDefault();
+
+    // 必须使用 { passive: false } 才能在 listener 中调用 preventDefault
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('gesturestart', onGestureStart);
+    el.addEventListener('gesturechange', onGestureChange);
+
+    return () => {
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('gesturestart', onGestureStart);
+      el.removeEventListener('gesturechange', onGestureChange);
+    };
+  }, [viewport, presenter]);
 
   const startPanning = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -69,5 +89,5 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
     }
   };
 
-  return { handleWheel, startPanning, isPanning };
+  return { startPanning, isPanning };
 };

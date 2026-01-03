@@ -12,8 +12,8 @@ const AppContent: React.FC = () => {
   const { assets, selectedIds, activeTab, viewport } = useAssetStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   
-  // 抽象出的交互钩子，显著减少了 App 的代码行数和状态依赖
-  const { handleWheel, startPanning, isPanning } = useCanvasInteraction(canvasRef);
+  // 逻辑已移入 hook 内部进行手动事件绑定，以支持 e.preventDefault()
+  const { startPanning, isPanning } = useCanvasInteraction(canvasRef);
 
   const filteredAssets = assets.filter(a => {
     if (activeTab === 'all') return true;
@@ -26,9 +26,9 @@ const AppContent: React.FC = () => {
   return (
     <div 
       className={`relative h-screen w-screen bg-[#F8F9FA] overflow-hidden transition-colors duration-500 ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
-      onWheel={handleWheel}
       onMouseDown={startPanning}
       ref={canvasRef}
+      style={{ touchAction: 'none' }} // 禁止原生触摸缩放/滚动
     >
       <div 
         className="absolute inset-0 canvas-dot-grid opacity-[0.2] pointer-events-none"
