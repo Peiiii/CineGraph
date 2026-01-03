@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { useChatStore } from '../stores/useChatStore';
-import { IconButton } from './ui/IconButton';
+import { ActionButton } from './ui/ActionButton';
 import { SuggestionCard } from './ui/SuggestionCard';
 import { ChatMessage } from './chat/ChatMessage';
 import { ChatInput } from './chat/ChatInput';
@@ -18,24 +18,24 @@ const AgentSidebar: React.FC = () => {
 
   return (
     <div className="no-canvas-interaction h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1.4rem] overflow-hidden relative shadow-sm">
-      <header className="px-6 py-4 flex items-center justify-end gap-0.5 border-b border-[#F8F9FA]">
-        <IconButton icon="fa-regular fa-plus-square" title="新建会话" className="!w-7 !h-7" tooltipPosition="bottom" />
-        <IconButton icon="fa-solid fa-sliders" title="参数设置" className="!w-7 !h-7" tooltipPosition="bottom" />
-        <IconButton icon="fa-solid fa-share-nodes" title="分享项目" className="!w-7 !h-7" tooltipPosition="bottom" />
-        <IconButton icon="fa-regular fa-clone" title="复制资产" className="!w-7 !h-7" tooltipPosition="bottom" />
-        <IconButton icon="fa-solid fa-arrow-up-right-from-square" title="导出" className="!text-[12px] !w-7 !h-7" tooltipPosition="bottom" />
+      <header className="px-5 py-3.5 flex items-center justify-end gap-1 border-b border-[#F8F9FA]">
+        <ActionButton icon="fa-regular fa-plus-square" title="新建会话" tooltipPosition="bottom" />
+        <ActionButton icon="fa-solid fa-sliders" title="参数设置" tooltipPosition="bottom" />
+        <ActionButton icon="fa-solid fa-share-nodes" title="分享项目" tooltipPosition="bottom" />
+        <ActionButton icon="fa-regular fa-clone" title="复制资产" tooltipPosition="bottom" />
+        <ActionButton icon="fa-solid fa-arrow-up-right-from-square" title="导出" tooltipPosition="bottom" />
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-7 py-5 space-y-7 scroll-smooth custom-scrollbar">
         {messages.length === 0 ? (
           <div className="space-y-7">
             <div className="mt-2">
-               <div className="w-9 h-9 bg-black rounded-full flex items-center justify-center text-[11px] text-white font-black mb-5">L</div>
-               <h1 className="text-[22px] font-extrabold text-black tracking-tight leading-tight">AI 导演助手已就绪</h1>
-               <p className="text-[14px] text-[#ADB5BD] mt-1 font-medium">描述你的电影创意，我将协助你完成分镜与剧本</p>
+               <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center text-[12px] text-white font-black mb-5 shadow-lg">L</div>
+               <h1 className="text-[24px] font-extrabold text-black tracking-tight leading-tight">AI 导演助手已就绪</h1>
+               <p className="text-[15px] text-[#868E96] mt-1 font-medium">描述你的电影创意，我将协助你完成分镜与剧本</p>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid gap-4">
               <SuggestionCard 
                 title="剧本创作 (Script)" 
                 desc="编写一段充满张力的追逐戏..." 

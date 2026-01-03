@@ -2,7 +2,7 @@
 import React from 'react';
 import { useChatStore } from '../../stores/useChatStore';
 import { usePresenter } from '../../PresenterContext';
-import { IconButton } from '../ui/IconButton';
+import { ActionButton } from '../ui/ActionButton';
 import { Tooltip } from '../ui/Tooltip';
 
 export const ChatInput: React.FC = () => {
@@ -13,7 +13,7 @@ export const ChatInput: React.FC = () => {
 
   return (
     <div className="px-6 pb-6 pt-2 space-y-4">
-      <div className="bg-[#F8F9FA] rounded-[1.6rem] p-4 border border-[#E9ECEF] focus-within:bg-white focus-within:border-[#0066FF]/30 focus-within:shadow-[0_0_0_1px_rgba(0,102,255,0.05)] transition-all duration-300">
+      <div className="bg-[#F8F9FA] rounded-[1.6rem] p-4 border border-[#E9ECEF] focus-within:bg-white focus-within:border-[#0066FF]/20 focus-within:shadow-[0_2px_8px_rgba(0,102,255,0.05)] transition-all duration-300">
         <textarea
           value={input}
           onChange={(e) => presenter.chatManager.setInput(e.target.value)}
@@ -23,12 +23,12 @@ export const ChatInput: React.FC = () => {
         />
         
         <div className="flex items-center justify-between mt-3 px-1">
-          <div className="flex items-center gap-1.5">
-             <IconButton icon="fa-solid fa-paperclip" title="上传剧本/参考图" className="!w-8 !h-8" />
-             <IconButton icon="fa-solid fa-at" title="引用画布资产" className="!w-8 !h-8" />
+          <div className="flex items-center gap-1">
+             <ActionButton icon="fa-solid fa-paperclip" title="上传剧本/参考图" />
+             <ActionButton icon="fa-solid fa-at" title="引用画布资产" />
              <Tooltip content="AI 创意润色" position="top">
                <button 
-                 className="w-8 h-8 rounded-full bg-[#E3F2FD] text-[#0066FF] flex items-center justify-center transition-all hover:bg-[#0066FF] hover:text-white active:scale-90"
+                 className="w-9 h-9 rounded-xl bg-[#E3F2FD] text-[#0066FF] flex items-center justify-center transition-all hover:bg-[#0066FF] hover:text-white active:scale-90"
                >
                  <i className="fa-solid fa-wand-magic-sparkles text-[12px]"></i>
                </button>
@@ -40,10 +40,10 @@ export const ChatInput: React.FC = () => {
                <button 
                  onClick={handleSend}
                  disabled={isTyping || !input.trim()}
-                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90 ${
+                 className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 ${
                    isTyping || !input.trim() 
-                     ? 'bg-gray-100 text-gray-300' 
-                     : 'bg-[#1A1C1E] text-white hover:bg-black hover:shadow-md'
+                     ? 'bg-[#F1F3F5] text-[#CED4DA]' 
+                     : 'bg-[#1A1C1E] text-white hover:bg-black hover:shadow-lg'
                  }`}
                >
                  {isTyping ? (

@@ -3,6 +3,7 @@ import React from 'react';
 import { useAssetStore } from '../../stores/useAssetStore';
 import { usePresenter } from '../../PresenterContext';
 import { Tooltip } from '../ui/Tooltip';
+import { ActionButton } from '../ui/ActionButton';
 
 export const ZoomHUD: React.FC = () => {
   const presenter = usePresenter();
@@ -14,47 +15,26 @@ export const ZoomHUD: React.FC = () => {
 
   return (
     <div 
-      className="no-canvas-interaction absolute bottom-6 z-[100] flex items-center bg-white/90 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1.5 sharp-shadow gap-1"
+      className="no-canvas-interaction absolute bottom-6 z-[100] flex items-center bg-white/95 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1.5 sharp-shadow gap-1"
       style={{ left: 'calc(50% - 240px)', transform: 'translateX(-50%)' }}
     >
-       <Tooltip content="缩小">
-         <button 
-           onClick={() => adjustZoom(-0.2)} 
-           className="w-8 h-8 rounded-full hover:bg-[#F1F3F5] transition-all flex items-center justify-center text-[#ADB5BD] hover:text-[#1A1C1E]"
-         >
-           <i className="fas fa-minus text-[10px]"></i>
-         </button>
-       </Tooltip>
+       <ActionButton icon="fas fa-minus" title="缩小" onClick={() => adjustZoom(-0.2)} />
        
        <Tooltip content="自适应视图 (F)">
          <button 
            onClick={() => presenter.assetManager.fitToScreen()}
-           className="px-3 h-8 rounded-full hover:bg-[#F1F3F5] transition-all flex items-center justify-center gap-2 group"
+           className="px-3.5 h-9 rounded-full hover:bg-[#F1F3F5] transition-all flex items-center justify-center gap-2.5 group"
          >
-           <span className="text-[11px] font-black text-[#1A1C1E] min-w-[35px]">{Math.round(viewport.zoom * 100)}%</span>
-           <i className="fas fa-expand text-[10px] text-[#ADB5BD] group-hover:text-[#1A1C1E]"></i>
+           <span className="text-[12px] font-bold text-[#1A1C1E] min-w-[32px] tabular-nums text-center">{Math.round(viewport.zoom * 100)}%</span>
+           <i className="fas fa-expand text-[11px] text-[#ADB5BD] group-hover:text-[#1A1C1E]"></i>
          </button>
        </Tooltip>
 
-       <Tooltip content="放大">
-         <button 
-           onClick={() => adjustZoom(0.2)} 
-           className="w-8 h-8 rounded-full hover:bg-[#F1F3F5] transition-all flex items-center justify-center text-[#ADB5BD] hover:text-[#1A1C1E]"
-         >
-           <i className="fas fa-plus text-[10px]"></i>
-         </button>
-       </Tooltip>
+       <ActionButton icon="fas fa-plus" title="放大" onClick={() => adjustZoom(0.2)} />
        
-       <div className="w-[1px] h-4 bg-[#F1F3F5] mx-1"></div>
+       <div className="w-[1px] h-4 bg-[#E9ECEF] mx-1"></div>
 
-       <Tooltip content="重置缩放 (Ctrl+0)">
-         <button 
-           onClick={() => presenter.assetManager.setViewport({ zoom: 1 })}
-           className="w-8 h-8 rounded-full hover:bg-[#F1F3F5] transition-all flex items-center justify-center text-[#ADB5BD] hover:text-[#1A1C1E]"
-         >
-           <i className="fas fa-rotate-left text-[10px]"></i>
-         </button>
-       </Tooltip>
+       <ActionButton icon="fas fa-rotate-left" title="重置 (Ctrl+0)" onClick={() => presenter.assetManager.setViewport({ zoom: 1 })} />
     </div>
   );
 };
