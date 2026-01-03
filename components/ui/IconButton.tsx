@@ -29,11 +29,11 @@ export const IconButton: React.FC<IconButtonProps> = ({
       disabled={disabled}
       className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 relative active:scale-90 group ${
         active 
-          ? 'bg-black text-white shadow-lg' 
-          : 'text-[#ADB5BD] hover:bg-[#F0F2F5] hover:text-black hover:shadow-sm'
+          ? 'bg-[#E2E6EA] text-[#1A1C1E] shadow-sm ring-1 ring-[#DEE2E6]' 
+          : 'text-[#ADB5BD] hover:bg-[#F1F3F5] hover:text-[#1A1C1E]'
       } ${className} ${disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
     >
-      <i className={`${icon} text-[15px] transition-transform duration-200 group-hover:scale-110`}></i>
+      <i className={`${icon} text-[15px] transition-transform duration-200 group-hover:scale-105`}></i>
       {children}
     </button>
   </Tooltip>

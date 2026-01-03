@@ -13,7 +13,7 @@ export const ChatInput: React.FC = () => {
 
   return (
     <div className="px-6 pb-6 pt-2 space-y-4">
-      <div className="bg-[#F8F9FA] rounded-[1.6rem] p-4 border border-[#E9ECEF] focus-within:bg-white focus-within:border-[#0066FF] focus-within:shadow-[0_0_0_1px_rgba(0,102,255,0.1)] transition-all duration-300">
+      <div className="bg-[#F8F9FA] rounded-[1.6rem] p-4 border border-[#E9ECEF] focus-within:bg-white focus-within:border-[#0066FF]/30 focus-within:shadow-[0_0_0_1px_rgba(0,102,255,0.05)] transition-all duration-300">
         <textarea
           value={input}
           onChange={(e) => presenter.chatManager.setInput(e.target.value)}
@@ -40,10 +40,10 @@ export const ChatInput: React.FC = () => {
                <button 
                  onClick={handleSend}
                  disabled={isTyping || !input.trim()}
-                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90 ${
+                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90 ${
                    isTyping || !input.trim() 
                      ? 'bg-gray-100 text-gray-300' 
-                     : 'bg-black text-white hover:shadow-lg'
+                     : 'bg-[#1A1C1E] text-white hover:bg-black hover:shadow-md'
                  }`}
                >
                  {isTyping ? (

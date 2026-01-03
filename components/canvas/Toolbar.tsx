@@ -27,18 +27,18 @@ export const Toolbar: React.FC = () => {
     <div className="no-canvas-interaction absolute left-6 top-1/2 -translate-y-1/2 w-[68px] flex flex-col items-center py-6 bg-white/90 backdrop-blur-xl border border-[#E9ECEF] rounded-[2.5rem] sharp-shadow z-[100] gap-3">
       {tools.map((item: any, idx: number) => (
         item.isSep ? (
-          <div key={`sep-${idx}`} className="w-8 h-[1px] bg-[#F0F2F5] my-1"></div>
+          <div key={`sep-${idx}`} className="w-8 h-[1px] bg-[#F1F3F5] my-1"></div>
         ) : (
           <Tooltip key={item.id} content={item.label} position="right">
             <button 
               onClick={item.action ? item.action : () => presenter.assetManager.setActiveTab(item.id)}
               className={`w-12 h-12 rounded-[18px] flex items-center justify-center transition-all duration-300 relative group active:scale-95 ${
                 activeTab === item.id 
-                  ? 'bg-black text-white shadow-xl translate-x-1' 
-                  : 'text-[#ADB5BD] hover:bg-[#F8F9FA] hover:text-black'
+                  ? 'bg-[#E2E6EA] text-[#1A1C1E] shadow-sm ring-1 ring-[#DEE2E6]' 
+                  : 'text-[#ADB5BD] hover:bg-[#F1F3F5] hover:text-[#1A1C1E]'
               }`}
             >
-              <i className={`${item.icon} text-[18px] transition-transform group-hover:scale-110`}></i>
+              <i className={`${item.icon} text-[18px] transition-transform group-hover:scale-105`}></i>
               {item.ai && (
                 <div className="absolute -top-1 -right-1 flex items-center justify-center">
                    <i className="fa-solid fa-sparkles text-[8px] text-[#0066FF] animate-pulse"></i>
