@@ -3,6 +3,7 @@ import React from 'react';
 import { useChatStore } from '../../stores/useChatStore';
 import { usePresenter } from '../../PresenterContext';
 import { IconButton } from '../ui/IconButton';
+import { Tooltip } from '../ui/Tooltip';
 
 export const ChatInput: React.FC = () => {
   const presenter = usePresenter();
@@ -11,34 +12,47 @@ export const ChatInput: React.FC = () => {
   const handleSend = () => presenter.chatManager.sendMessage();
 
   return (
-    <div className="px-5 pb-5 pt-2 space-y-4">
-      <div className="bg-[#F8F9FA] rounded-[1.4rem] p-4 border border-transparent focus-within:bg-white focus-within:border-[#E9ECEF] transition-all duration-300">
+    <div className="px-6 pb-6 pt-2 space-y-4">
+      <div className="bg-[#F8F9FA] rounded-[1.6rem] p-4 border border-[#E9ECEF] focus-within:bg-white focus-within:border-[#0066FF] focus-within:shadow-[0_0_0_1px_rgba(0,102,255,0.1)] transition-all duration-300">
         <textarea
           value={input}
           onChange={(e) => presenter.chatManager.setInput(e.target.value)}
           onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
-          placeholder="输入创作指令，例如：生成一段追逐戏的分镜..."
-          className="w-full bg-transparent px-1 text-[13px] focus:outline-none resize-none h-14 placeholder:text-[#ADB5BD] text-black font-medium"
+          placeholder="输入创作指令，如：‘生成一个赛博朋克风格的分镜图’"
+          className="w-full bg-transparent px-2 text-[14px] focus:outline-none resize-none h-16 placeholder:text-[#ADB5BD] text-black font-medium leading-relaxed"
         />
         
-        <div className="flex items-center justify-between mt-3">
-          <div className="flex items-center gap-1">
-             <IconButton icon="fa-solid fa-paperclip" title="上传附件" className="!w-7 !h-7" />
-             <IconButton icon="fa-solid fa-at" title="提及资产" className="!w-7 !h-7" />
-             <button title="灵感增强" className="w-7 h-7 rounded-full bg-[#E3F2FD] text-[#0066FF] flex items-center justify-center transition-all hover:bg-[#0066FF] hover:text-white">
-               <i className="fa-solid fa-wand-magic-sparkles text-[11px]"></i>
-             </button>
+        <div className="flex items-center justify-between mt-3 px-1">
+          <div className="flex items-center gap-1.5">
+             <IconButton icon="fa-solid fa-paperclip" title="上传剧本/参考图" className="!w-8 !h-8" />
+             <IconButton icon="fa-solid fa-at" title="引用画布资产" className="!w-8 !h-8" />
+             <Tooltip content="AI 创意润色" position="top">
+               <button 
+                 className="w-8 h-8 rounded-full bg-[#E3F2FD] text-[#0066FF] flex items-center justify-center transition-all hover:bg-[#0066FF] hover:text-white active:scale-90"
+               >
+                 <i className="fa-solid fa-wand-magic-sparkles text-[12px]"></i>
+               </button>
+             </Tooltip>
           </div>
 
-          <div className="flex items-center justify-between">
-             <button 
-               onClick={handleSend}
-               disabled={isTyping}
-               title="发送指令"
-               className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm active:scale-90 ${isTyping ? 'bg-gray-100 text-gray-400' : 'bg-[#C4C4C4] hover:bg-black text-white'}`}
-             >
-               <i className="fa-solid fa-arrow-up text-[13px]"></i>
-             </button>
+          <div className="flex items-center">
+             <Tooltip content="发送指令 (Enter)" position="top">
+               <button 
+                 onClick={handleSend}
+                 disabled={isTyping || !input.trim()}
+                 className={`w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md active:scale-90 ${
+                   isTyping || !input.trim() 
+                     ? 'bg-gray-100 text-gray-300' 
+                     : 'bg-black text-white hover:shadow-lg'
+                 }`}
+               >
+                 {isTyping ? (
+                   <i className="fa-solid fa-circle-notch animate-spin text-[14px]"></i>
+                 ) : (
+                   <i className="fa-solid fa-arrow-up text-[15px]"></i>
+                 )}
+               </button>
+             </Tooltip>
           </div>
         </div>
       </div>

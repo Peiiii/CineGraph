@@ -19,11 +19,11 @@ const AgentSidebar: React.FC = () => {
   return (
     <div className="h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1.4rem] overflow-hidden relative shadow-sm">
       <header className="px-6 py-4 flex items-center justify-end gap-0.5 border-b border-[#F8F9FA]">
-        <IconButton icon="fa-regular fa-plus-square" title="新建会话" className="!w-7 !h-7" />
-        <IconButton icon="fa-solid fa-sliders" title="参数设置" className="!w-7 !h-7" />
-        <IconButton icon="fa-solid fa-share-nodes" title="分享项目" className="!w-7 !h-7" />
-        <IconButton icon="fa-regular fa-clone" title="复制资产" className="!w-7 !h-7" />
-        <IconButton icon="fa-solid fa-arrow-up-right-from-square" title="导出" className="!text-[12px] !w-7 !h-7" />
+        <IconButton icon="fa-regular fa-plus-square" title="新建会话" className="!w-7 !h-7" tooltipPosition="bottom" />
+        <IconButton icon="fa-solid fa-sliders" title="参数设置" className="!w-7 !h-7" tooltipPosition="bottom" />
+        <IconButton icon="fa-solid fa-share-nodes" title="分享项目" className="!w-7 !h-7" tooltipPosition="bottom" />
+        <IconButton icon="fa-regular fa-clone" title="复制资产" className="!w-7 !h-7" tooltipPosition="bottom" />
+        <IconButton icon="fa-solid fa-arrow-up-right-from-square" title="导出" className="!text-[12px] !w-7 !h-7" tooltipPosition="bottom" />
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-7 py-5 space-y-7 scroll-smooth custom-scrollbar">

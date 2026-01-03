@@ -2,37 +2,50 @@
 import React from 'react';
 import { useAssetStore } from '../../stores/useAssetStore';
 import { usePresenter } from '../../PresenterContext';
+import { Tooltip } from '../ui/Tooltip';
 
 export const Toolbar: React.FC = () => {
   const presenter = usePresenter();
   const { activeTab } = useAssetStore();
 
   const tools = [
-    { id: 'all', icon: 'fa-solid fa-arrow-pointer', label: '选择模式' },
-    { id: 'add', icon: 'fa-solid fa-plus', label: '添加资产' },
-    { id: 'text', icon: 'fa-solid fa-t', label: '文字剧本' },
+    { id: 'all', icon: 'fa-solid fa-arrow-pointer', label: '全部资产' },
+    { id: 'text', icon: 'fa-solid fa-file-lines', label: '剧本与文字' },
+    { id: 'media', icon: 'fa-regular fa-image', ai: true, label: '分镜图片' },
+    { id: 'video', icon: 'fa-solid fa-film', ai: true, label: '视频动态' },
     { id: 'sep', isSep: true },
-    { id: 'media', icon: 'fa-regular fa-image', ai: true, label: 'AI 生图' },
-    { id: 'video', icon: 'fa-solid fa-film', ai: true, label: 'AI 视频' },
+    { id: 'add_text', icon: 'fa-solid fa-plus', label: '手动添加资产', action: () => presenter.assetManager.addAsset({ 
+      id: Math.random().toString(36).substr(2, 9), 
+      type: 'text', 
+      title: '新建便签', 
+      content: '在此输入内容...', 
+      createdAt: Date.now() 
+    }) },
   ];
 
   return (
-    <div className="absolute left-5 top-1/2 -translate-y-1/2 w-[60px] flex flex-col items-center py-6 bg-white border border-[#E9ECEF] rounded-[2.5rem] sharp-shadow z-[100] gap-2">
+    <div className="absolute left-6 top-1/2 -translate-y-1/2 w-[68px] flex flex-col items-center py-6 bg-white/90 backdrop-blur-xl border border-[#E9ECEF] rounded-[2.5rem] sharp-shadow z-[100] gap-3">
       {tools.map((item: any, idx: number) => (
         item.isSep ? (
-          <div key={`sep-${idx}`} className="w-6 h-[1px] bg-[#F0F2F5] my-2"></div>
+          <div key={`sep-${idx}`} className="w-8 h-[1px] bg-[#F0F2F5] my-1"></div>
         ) : (
-          <button 
-            key={item.id}
-            title={item.label}
-            onClick={() => presenter.assetManager.setActiveTab(item.id)}
-            className={`w-11 h-11 rounded-[16px] flex items-center justify-center transition-all relative ${
-              activeTab === item.id ? 'bg-[#F0F2F5] text-black shadow-inner' : 'text-[#ADB5BD] hover:bg-[#F8F9FA] hover:text-black'
-            }`}
-          >
-            <i className={`${item.icon} text-[16px]`}></i>
-            {item.ai && <i className="fa-solid fa-sparkles text-[6px] absolute top-2 right-2 text-[#0066FF] animate-pulse"></i>}
-          </button>
+          <Tooltip key={item.id} content={item.label} position="right">
+            <button 
+              onClick={item.action ? item.action : () => presenter.assetManager.setActiveTab(item.id)}
+              className={`w-12 h-12 rounded-[18px] flex items-center justify-center transition-all duration-300 relative group active:scale-95 ${
+                activeTab === item.id 
+                  ? 'bg-black text-white shadow-xl translate-x-1' 
+                  : 'text-[#ADB5BD] hover:bg-[#F8F9FA] hover:text-black'
+              }`}
+            >
+              <i className={`${item.icon} text-[18px] transition-transform group-hover:scale-110`}></i>
+              {item.ai && (
+                <div className="absolute -top-1 -right-1 flex items-center justify-center">
+                   <i className="fa-solid fa-sparkles text-[8px] text-[#0066FF] animate-pulse"></i>
+                </div>
+              )}
+            </button>
+          </Tooltip>
         )
       ))}
     </div>

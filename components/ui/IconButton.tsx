@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Tooltip } from './Tooltip';
 
 interface IconButtonProps {
   icon: string;
@@ -9,6 +10,7 @@ interface IconButtonProps {
   active?: boolean;
   disabled?: boolean;
   children?: React.ReactNode;
+  tooltipPosition?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 export const IconButton: React.FC<IconButtonProps> = ({ 
@@ -18,19 +20,21 @@ export const IconButton: React.FC<IconButtonProps> = ({
   className = "", 
   active,
   disabled,
-  children
+  children,
+  tooltipPosition = 'top'
 }) => (
-  <button 
-    title={title}
-    onClick={onClick}
-    disabled={disabled}
-    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all relative ${
-      active 
-        ? 'bg-[#F0F2F5] text-black shadow-inner' 
-        : 'text-[#ADB5BD] hover:bg-[#F0F2F5] hover:text-black'
-    } ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-  >
-    <i className={`${icon} text-[14px]`}></i>
-    {children}
-  </button>
+  <Tooltip content={title} position={tooltipPosition}>
+    <button 
+      onClick={onClick}
+      disabled={disabled}
+      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 relative active:scale-90 group ${
+        active 
+          ? 'bg-black text-white shadow-lg' 
+          : 'text-[#ADB5BD] hover:bg-[#F0F2F5] hover:text-black hover:shadow-sm'
+      } ${className} ${disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+    >
+      <i className={`${icon} text-[15px] transition-transform duration-200 group-hover:scale-110`}></i>
+      {children}
+    </button>
+  </Tooltip>
 );
