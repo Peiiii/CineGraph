@@ -43,9 +43,9 @@ export class AssetManager {
     const cardWidth = 420;
     const estimatedCardHeight = 420; 
 
-    // UI 实际占用尺寸 (紧凑化后更新)
+    // UI 实际占用尺寸 (跟随 App.tsx 侧边栏宽度更新)
     const toolbarWidth = 85;   
-    const sidebarWidth = 340;  // 320 面板 + 8 边缘 + 12 安全间距
+    const sidebarWidth = 400;  // 380 面板 + 8 边缘 + 12 安全间距
     const topBarHeight = 10;   
     const bottomHUDHeight = 80; 
 

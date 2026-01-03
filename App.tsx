@@ -55,7 +55,8 @@ const AppContent: React.FC = () => {
       <ZoomHUD />
       <Toolbar />
 
-      <div className="absolute right-2 top-2 bottom-2 w-[320px] z-[200]">
+      {/* 右侧 Agent 面板 - 宽度调整为 380px */}
+      <div className="absolute right-2 top-2 bottom-2 w-[380px] z-[200]">
         <AgentSidebar />
       </div>
     </div>
