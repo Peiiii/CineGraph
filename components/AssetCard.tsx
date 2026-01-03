@@ -63,7 +63,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
     >
       <div className={`relative transition-all duration-300 ${
         selected 
-        ? 'ring-[6px] ring-[#0066FF] rounded-[2rem] shadow-[0_40px_100px_-10px_rgba(0,102,255,0.3)] translate-y-[-4px]' 
+        ? 'ring-[3px] ring-[#0066FF] rounded-[2rem] shadow-[0_20px_60px_-10px_rgba(0,102,255,0.2)] translate-y-[-2px]' 
         : 'bg-white rounded-[2rem] border border-[#E9ECEF] sharp-shadow hover:translate-y-[-2px] hover:shadow-xl'
       }`}>
         {/* 内容裁剪层 */}
@@ -84,8 +84,8 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
       
       {/* 底部信息栏 */}
       <div className="flex items-center px-4 transition-transform duration-300 transform">
-        <div className={`h-1.5 w-1.5 rounded-full mr-3 ${selected ? 'bg-[#0066FF] animate-pulse' : 'bg-[#E9ECEF]'}`}></div>
-        <h3 className={`text-[11px] font-bold uppercase tracking-[0.2em] transition-colors ${selected ? 'text-black' : 'text-[#ADB5BD]'}`}>
+        <div className={`h-1.2 w-1.2 rounded-full mr-2.5 ${selected ? 'bg-[#0066FF]' : 'bg-[#E9ECEF]'}`}></div>
+        <h3 className={`text-[10px] font-bold uppercase tracking-[0.15em] transition-colors ${selected ? 'text-black' : 'text-[#ADB5BD]'}`}>
           {asset.title}
         </h3>
       </div>
