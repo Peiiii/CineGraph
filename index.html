@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CineGraph | Lovart Studio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入带有 typography 插件的 tailwind -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script type="importmap">
 {
@@ -43,6 +44,34 @@
   .canvas-dot-grid {
     background-image: radial-gradient(#CED4DA 0.8px, transparent 0.8px);
     background-size: 32px 32px;
+  }
+
+  /* 自定义 Markdown 样式优化 */
+  .prose {
+    --tw-prose-body: #343A40;
+    --tw-prose-headings: #1A1C1E;
+    --tw-prose-links: #0066FF;
+    --tw-prose-bold: #1A1C1E;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+  }
+  .prose strong {
+    font-weight: 700;
+  }
+  .prose code {
+    background: #F1F3F5;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .prose pre {
+    background: #1A1C1E !important;
+    color: #F8F9FA !important;
+    border-radius: 12px;
+  }
+  .prose p {
+    margin-top: 0.5em !important;
+    margin-bottom: 0.5em !important;
   }
 </style>
 </head>
