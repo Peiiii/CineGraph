@@ -5,7 +5,6 @@ import { Asset, Viewport } from '../types';
 export class AssetManager {
   addAsset = (asset: Omit<Asset, 'position'>) => {
     const { viewport } = useAssetStore.getState();
-    // 默认放在视口中心
     const position = {
       x: -viewport.x / viewport.zoom + (window.innerWidth / 2) / viewport.zoom - 200,
       y: -viewport.y / viewport.zoom + (window.innerHeight / 2) / viewport.zoom - 150,
@@ -32,10 +31,7 @@ export class AssetManager {
 
   /**
    * 一键自适应屏幕逻辑
-   * 需要避开：
-   * 1. 左侧 Toolbar (约 80px)
-   * 2. 右侧 AgentSidebar (约 480px)
-   * 3. 上下 Padding (约 40px)
+   * 避开：左侧工具栏 (80px), 右侧 Agent 面板 (480px)
    */
   fitToScreen = () => {
     const { assets, setViewport } = useAssetStore.getState();
@@ -44,17 +40,17 @@ export class AssetManager {
       return;
     }
 
-    const padding = 60; // 内部留白
+    const margin = 80; // 画布边缘的额外留白
     const cardWidth = 420;
-    const estimatedCardHeight = 450; // 包含标题的预估高度
+    const estimatedCardHeight = 450; 
 
-    // 定义物理遮挡区域
-    const leftObstruction = 100; // Toolbar (60) + Margin (20) + Buffer
-    const rightObstruction = 500; // Sidebar (460) + Margin (16) + Buffer
-    const topObstruction = 40;
-    const bottomObstruction = 80; // HUD 区域
+    // UI 遮挡区域定义
+    const leftUIWidth = 120; // 包含 Toolbar 和间距
+    const rightUIWidth = 500; // 包含 AgentSidebar 和间距
+    const topUIHeight = 40;
+    const bottomUIHeight = 100; // 包含 HUD
 
-    // 计算资产群组在世界坐标系下的包围盒
+    // 计算资产群组的边界（世界坐标）
     const minX = Math.min(...assets.map(a => a.position.x));
     const maxX = Math.max(...assets.map(a => a.position.x + cardWidth));
     const minY = Math.min(...assets.map(a => a.position.y));
@@ -63,27 +59,27 @@ export class AssetManager {
     const contentWidth = maxX - minX;
     const contentHeight = maxY - minY;
 
-    // 计算实际可用的画布区域（避开 UI 遮挡）
-    const availableWidth = window.innerWidth - leftObstruction - rightObstruction;
-    const availableHeight = window.innerHeight - topObstruction - bottomObstruction;
+    // 计算真正“露出来”的可用物理空间
+    const usableWidth = window.innerWidth - leftUIWidth - rightUIWidth;
+    const usableHeight = window.innerHeight - topUIHeight - bottomUIHeight;
 
-    // 计算缩放比例，取宽高缩放的最小值，并设置上下限
-    const scaleX = (availableWidth - padding * 2) / contentWidth;
-    const scaleY = (availableHeight - padding * 2) / contentHeight;
-    const nextZoom = Math.max(0.1, Math.min(scaleX, scaleY, 1.2));
+    // 计算缩放：需要把 content 塞进 usable 空间，并留出 margin
+    const scaleX = (usableWidth - margin * 2) / contentWidth;
+    const scaleY = (usableHeight - margin * 2) / contentHeight;
+    // 限制最大缩放为 1.1x，最小为 0.1x，防止过大遮挡美感
+    const nextZoom = Math.max(0.1, Math.min(scaleX, scaleY, 1.1));
 
-    // 计算可用区域的中心点（屏幕坐标）
-    const visibleCenterX = leftObstruction + availableWidth / 2;
-    const visibleCenterY = topObstruction + availableHeight / 2;
+    // 计算可用区域的物理中心点
+    const usableCenterX = leftUIWidth + usableWidth / 2;
+    const usableCenterY = topUIHeight + usableHeight / 2;
 
-    // 计算内容群组的中心点（世界坐标）
+    // 内容的世界中心点
     const contentCenterX = (minX + maxX) / 2;
     const contentCenterY = (minY + maxY) / 2;
 
-    // 根据中心点对齐公式：ScreenPos = WorldPos * Zoom + Offset
-    // 推导 Offset = ScreenPos - WorldPos * Zoom
-    const nextX = visibleCenterX - contentCenterX * nextZoom;
-    const nextY = visibleCenterY - contentCenterY * nextZoom;
+    // 偏移量 = 目标中心点 - (世界中心点 * 缩放)
+    const nextX = usableCenterX - contentCenterX * nextZoom;
+    const nextY = usableCenterY - contentCenterY * nextZoom;
 
     setViewport({ x: nextX, y: nextY, zoom: nextZoom });
   };

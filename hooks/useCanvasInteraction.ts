@@ -15,12 +15,16 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
     const onWheel = (e: WheelEvent) => {
       // 检查是否是缩放操作（触控板捏合或 Ctrl+滚轮）
       if (e.ctrlKey || e.metaKey) {
-        // 关键：必须调用 preventDefault 阻止浏览器原生缩放
         e.preventDefault();
 
-        const zoomSpeed = 0.0025;
+        // 提升敏感度：将缩放步长和基础系数调大
+        // deltaY 正常滚动通常是 100 或 -100
         const delta = -e.deltaY;
-        const zoomFactor = Math.pow(1.1, (delta * zoomSpeed));
+        
+        // 使用更激进的缩放系数，基础 1.25 倍
+        // 敏感度系数从 0.0025 提升到 0.005，感官上会快一倍以上
+        const zoomSpeed = 0.005; 
+        const zoomFactor = Math.pow(1.25, (delta * zoomSpeed));
         const newZoom = viewport.zoom * zoomFactor;
 
         const rect = el.getBoundingClientRect();
@@ -30,6 +34,7 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
         const worldX = (mouseX - viewport.x) / viewport.zoom;
         const worldY = (mouseY - viewport.y) / viewport.zoom;
 
+        // 限制缩放范围在 0.05x 到 5x 之间
         const nextZoom = Math.max(0.05, Math.min(newZoom, 5));
         const newX = mouseX - worldX * nextZoom;
         const newY = mouseY - worldY * nextZoom;
@@ -37,11 +42,10 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
         presenter.assetManager.setViewport({ zoom: nextZoom, x: newX, y: newY });
       } else {
         // 普通平移逻辑
-        // 如果是在画布背景上滚动，也可以阻止默认滚动行为，避免触发浏览器前进后退手势
-        // e.preventDefault(); 
+        // 提高平移速度，1.5倍系数让拖拽更跟手
         presenter.assetManager.setViewport({ 
-          x: viewport.x - e.deltaX * 1.2, 
-          y: viewport.y - e.deltaY * 1.2 
+          x: viewport.x - e.deltaX * 1.5, 
+          y: viewport.y - e.deltaY * 1.5 
         });
       }
     };
@@ -50,7 +54,6 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
     const onGestureStart = (e: Event) => e.preventDefault();
     const onGestureChange = (e: Event) => e.preventDefault();
 
-    // 必须使用 { passive: false } 才能在 listener 中调用 preventDefault
     el.addEventListener('wheel', onWheel, { passive: false });
     el.addEventListener('gesturestart', onGestureStart);
     el.addEventListener('gesturechange', onGestureChange);
@@ -64,6 +67,7 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
 
   const startPanning = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
+    // 只有点击背景或按住 Alt 键时才触发平移
     const isBackground = target === canvasRef.current || target.classList.contains('canvas-viewport-layer');
     
     if (e.button === 0 && (isBackground || e.altKey)) {
