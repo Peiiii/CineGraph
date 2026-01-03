@@ -31,7 +31,7 @@ export class AssetManager {
 
   /**
    * 一键自适应屏幕逻辑
-   * 避开：左侧工具栏 (80px), 右侧 Agent 面板 (480px)
+   * 目标：将所有资产放置在非遮挡区域中心，并尽可能填满可用空间
    */
   fitToScreen = () => {
     const { assets, setViewport } = useAssetStore.getState();
@@ -40,17 +40,19 @@ export class AssetManager {
       return;
     }
 
-    const margin = 80; // 画布边缘的额外留白
+    // 核心参数微调：减少留白以提高填充率
+    const innerPadding = 40; 
     const cardWidth = 420;
-    const estimatedCardHeight = 450; 
+    // 动态计算大致高度，或者使用更贴合的预估值（300-450）
+    const estimatedCardHeight = 420; 
 
-    // UI 遮挡区域定义
-    const leftUIWidth = 120; // 包含 Toolbar 和间距
-    const rightUIWidth = 500; // 包含 AgentSidebar 和间距
-    const topUIHeight = 40;
-    const bottomUIHeight = 100; // 包含 HUD
+    // UI 实际占用尺寸（px）
+    const toolbarWidth = 85;   // 左侧工具栏 60 + 间距
+    const sidebarWidth = 480;  // 右侧面板 460 + 间距
+    const topBarHeight = 20;   // 顶部留空
+    const bottomHUDHeight = 90; // 底部 ZoomHUD 区域
 
-    // 计算资产群组的边界（世界坐标）
+    // 1. 计算所有资产构成的联合边界（世界坐标）
     const minX = Math.min(...assets.map(a => a.position.x));
     const maxX = Math.max(...assets.map(a => a.position.x + cardWidth));
     const minY = Math.min(...assets.map(a => a.position.y));
@@ -59,25 +61,28 @@ export class AssetManager {
     const contentWidth = maxX - minX;
     const contentHeight = maxY - minY;
 
-    // 计算真正“露出来”的可用物理空间
-    const usableWidth = window.innerWidth - leftUIWidth - rightUIWidth;
-    const usableHeight = window.innerHeight - topUIHeight - bottomUIHeight;
+    // 2. 计算除去遮挡后的物理可用区域尺寸
+    const usableWidth = window.innerWidth - toolbarWidth - sidebarWidth;
+    const usableHeight = window.innerHeight - topBarHeight - bottomHUDHeight;
 
-    // 计算缩放：需要把 content 塞进 usable 空间，并留出 margin
-    const scaleX = (usableWidth - margin * 2) / contentWidth;
-    const scaleY = (usableHeight - margin * 2) / contentHeight;
-    // 限制最大缩放为 1.1x，最小为 0.1x，防止过大遮挡美感
-    const nextZoom = Math.max(0.1, Math.min(scaleX, scaleY, 1.1));
+    // 3. 计算缩放比：可用空间 / 内容空间
+    // 增加填充感：减小 innerPadding 的比例影响
+    const scaleX = (usableWidth - innerPadding * 2) / contentWidth;
+    const scaleY = (usableHeight - innerPadding * 2) / contentHeight;
+    
+    // 限制最大缩放倍数，单张卡片不至于铺满全屏，多张卡片则尽可能填满
+    const maxSafeZoom = assets.length === 1 ? 0.9 : 1.2;
+    const nextZoom = Math.max(0.1, Math.min(scaleX, scaleY, maxSafeZoom));
 
-    // 计算可用区域的物理中心点
-    const usableCenterX = leftUIWidth + usableWidth / 2;
-    const usableCenterY = topUIHeight + usableHeight / 2;
+    // 4. 计算视口偏移（Offset）
+    // 目标是在 usable 区域的正中心显示 content 的中心
+    const usableCenterX = toolbarWidth + usableWidth / 2;
+    const usableCenterY = topBarHeight + usableHeight / 2;
 
-    // 内容的世界中心点
     const contentCenterX = (minX + maxX) / 2;
     const contentCenterY = (minY + maxY) / 2;
 
-    // 偏移量 = 目标中心点 - (世界中心点 * 缩放)
+    // Offset = ScreenCenter - (WorldCenter * Zoom)
     const nextX = usableCenterX - contentCenterX * nextZoom;
     const nextY = usableCenterY - contentCenterY * nextZoom;
 
