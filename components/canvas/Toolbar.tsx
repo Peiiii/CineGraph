@@ -17,7 +17,7 @@ export const Toolbar: React.FC = () => {
   ];
 
   return (
-    <div className="no-canvas-interaction absolute left-6 top-1/2 -translate-y-1/2 w-16 flex flex-col items-center py-4 bg-white/95 backdrop-blur-xl border border-[#E9ECEF] rounded-[2rem] sharp-shadow z-[100] gap-2">
+    <div className="no-canvas-interaction absolute left-6 top-1/2 -translate-y-1/2 w-16 flex flex-col items-center py-3 bg-white/95 backdrop-blur-xl border border-[#E9ECEF] rounded-[2rem] sharp-shadow z-[100] gap-1.5">
       {tabs.map((tab) => (
         <TabButton 
           key={tab.id}
@@ -29,7 +29,7 @@ export const Toolbar: React.FC = () => {
         />
       ))}
       
-      <div className="w-8 h-[1px] bg-[#F1F3F5] my-1"></div>
+      <div className="w-8 h-[1px] bg-[#F1F3F5] my-1.5"></div>
       
       <ActionButton 
         icon="fa-solid fa-plus" 
