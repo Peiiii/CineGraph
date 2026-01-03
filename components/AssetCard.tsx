@@ -57,22 +57,21 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
         top: asset.position.y,
         position: 'absolute',
         zIndex: isDragging ? 1000 : (selected ? 10 : 1),
-        transform: isDragging ? 'scale(1.02)' : 'scale(1)',
       }}
-      className={`group flex flex-col gap-3 cursor-grab active:cursor-grabbing w-[420px] select-none transition-all duration-200 ${isDragging ? 'opacity-90' : 'opacity-100'}`}
+      className={`group flex flex-col gap-3 cursor-grab active:cursor-grabbing w-[420px] select-none ${isDragging ? 'opacity-80' : 'opacity-100'}`}
     >
-      <div className={`relative transition-all duration-300 ${
+      <div className={`relative transition-shadow duration-300 ${
         selected 
-        ? 'ring-[3px] ring-[#0066FF] rounded-[2rem] shadow-[0_20px_60px_-10px_rgba(0,102,255,0.2)] translate-y-[-2px]' 
-        : 'bg-white rounded-[2rem] border border-[#E9ECEF] sharp-shadow hover:translate-y-[-2px] hover:shadow-xl'
+        ? 'ring-[3px] ring-[#0066FF] rounded-[2rem] shadow-[0_20px_60px_-10px_rgba(0,102,255,0.2)]' 
+        : 'bg-white rounded-[2rem] border border-[#E9ECEF] sharp-shadow hover:shadow-xl'
       }`}>
         {/* 内容裁剪层 */}
         <div className="w-full h-full rounded-[1.8rem] overflow-hidden">
           <AssetRenderer asset={asset} />
         </div>
         
-        {/* 操作交互层 - 放在裁剪层之外，避免 Tooltip 和阴影被切断 */}
-        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+        {/* 操作交互层 */}
+        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
           <ActionButton 
             icon="fa-solid fa-trash-can" 
             title="从工作区移除" 
@@ -83,7 +82,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
       </div>
       
       {/* 底部信息栏 */}
-      <div className="flex items-center px-4 transition-transform duration-300 transform">
+      <div className="flex items-center px-4">
         <div className={`h-1.2 w-1.2 rounded-full mr-2.5 ${selected ? 'bg-[#0066FF]' : 'bg-[#E9ECEF]'}`}></div>
         <h3 className={`text-[10px] font-bold uppercase tracking-[0.15em] transition-colors ${selected ? 'text-black' : 'text-[#ADB5BD]'}`}>
           {asset.title}
