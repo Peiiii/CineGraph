@@ -15,6 +15,15 @@ const AppContent: React.FC = () => {
   
   const { startPanning, isPanning } = useCanvasInteraction(canvasRef);
 
+  // 初始化时自动自适应屏幕
+  useEffect(() => {
+    // 稍微延迟一下确保 DOM 布局已完成计算
+    const timer = setTimeout(() => {
+      presenter.assetManager.fitToScreen();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [presenter]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
