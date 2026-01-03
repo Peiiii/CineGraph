@@ -12,14 +12,14 @@ export const ChatInput: React.FC = () => {
   const handleSend = () => presenter.chatManager.sendMessage();
 
   return (
-    <div className="px-3 pb-3 pt-0.5">
-      <div className="bg-[#F8F9FA] rounded-[0.8rem] p-2.5 border border-[#E9ECEF] focus-within:bg-white focus-within:border-[#0066FF]/20 focus-within:shadow-sm transition-all duration-300">
+    <div className="px-4 pb-4 pt-1">
+      <div className="bg-[#F8F9FA] rounded-[1rem] p-3 border border-[#E9ECEF] focus-within:bg-white focus-within:border-[#0066FF]/20 focus-within:shadow-sm transition-all duration-300">
         <textarea
           value={input}
           onChange={(e) => presenter.chatManager.setInput(e.target.value)}
           onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
           placeholder="在此输入指令..."
-          className="w-full bg-transparent px-1 text-[13px] focus:outline-none resize-none h-12 placeholder:text-[#ADB5BD] text-black font-medium leading-normal"
+          className="w-full bg-transparent px-1 text-[13px] focus:outline-none resize-none h-14 placeholder:text-[#ADB5BD] text-black font-medium leading-normal"
         />
         
         <div className="flex items-center justify-between mt-1.5 px-0.5">

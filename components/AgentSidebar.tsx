@@ -1,12 +1,14 @@
 
 import React, { useRef, useEffect } from 'react';
 import { useChatStore } from '../stores/useChatStore';
+import { usePresenter } from '../PresenterContext';
 import { ActionButton } from './ui/ActionButton';
 import { SuggestionCard } from './ui/SuggestionCard';
 import { ChatMessage } from './chat/ChatMessage';
 import { ChatInput } from './chat/ChatInput';
 
 const AgentSidebar: React.FC = () => {
+  const presenter = usePresenter();
   const { messages } = useChatStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -19,22 +21,29 @@ const AgentSidebar: React.FC = () => {
   return (
     <div className="no-canvas-interaction h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1rem] overflow-hidden relative shadow-sm">
       <header className="px-3 py-2 flex items-center justify-end gap-0.5 border-b border-[#F8F9FA]">
-        <ActionButton icon="fa-regular fa-plus-square" title="新建会话" tooltipPosition="bottom" className="!w-8 !h-8" />
+        <ActionButton 
+          icon="fa-regular fa-plus-square" 
+          title="新建会话" 
+          tooltipPosition="bottom" 
+          className="!w-8 !h-8" 
+          onClick={() => presenter.chatManager.newChat()}
+        />
         <ActionButton icon="fa-solid fa-sliders" title="参数设置" tooltipPosition="bottom" className="!w-8 !h-8" />
         <ActionButton icon="fa-solid fa-share-nodes" title="分享项目" tooltipPosition="bottom" className="!w-8 !h-8" />
         <ActionButton icon="fa-solid fa-arrow-up-right-from-square" title="导出" tooltipPosition="bottom" className="!w-8 !h-8" />
       </header>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-5 scroll-smooth custom-scrollbar">
+      {/* 增加左右边距 px-6，并微调上下间距 */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-5 space-y-6 scroll-smooth custom-scrollbar">
         {messages.length === 0 ? (
-          <div className="space-y-5">
-            <div className="mt-1">
-               <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-[10px] text-white font-black mb-3 shadow-md">L</div>
-               <h1 className="text-[18px] font-extrabold text-black tracking-tight leading-tight">AI 导演助手</h1>
-               <p className="text-[12px] text-[#868E96] mt-1 font-medium">协助你完成电影分镜与剧本</p>
+          <div className="space-y-6">
+            <div className="mt-2">
+               <div className="w-9 h-9 bg-black rounded-full flex items-center justify-center text-[11px] text-white font-black mb-4 shadow-md">L</div>
+               <h1 className="text-[20px] font-extrabold text-black tracking-tight leading-tight">AI 导演助手</h1>
+               <p className="text-[13px] text-[#868E96] mt-1.5 font-medium">协助你完成电影分镜与剧本</p>
             </div>
 
-            <div className="grid gap-2.5">
+            <div className="grid gap-3">
               <SuggestionCard 
                 title="剧本创作" 
                 desc="编写一段充满张力的追逐戏..." 

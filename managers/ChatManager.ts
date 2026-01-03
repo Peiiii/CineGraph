@@ -9,6 +9,13 @@ export class ChatManager {
     useChatStore.getState().setInput(val);
   };
 
+  newChat = () => {
+    const { setMessages, setIsTyping, setInput } = useChatStore.getState();
+    setMessages([]);
+    setIsTyping(false);
+    setInput('');
+  };
+
   sendMessage = async () => {
     const { input, isTyping, setMessages, setInput, setIsTyping } = useChatStore.getState();
     if (!input.trim() || isTyping) return;
