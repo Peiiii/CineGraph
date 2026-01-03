@@ -71,7 +71,7 @@ const AppContent: React.FC = () => {
       <ZoomHUD />
       <Toolbar />
 
-      <div className="absolute right-6 top-6 bottom-6 w-[480px] z-[200]">
+      <div className="absolute right-4 top-4 bottom-4 w-[420px] z-[200]">
         <AgentSidebar />
       </div>
     </div>
