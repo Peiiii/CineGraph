@@ -1,71 +1,45 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import AssetCard from './components/AssetCard';
 import AgentSidebar from './components/AgentSidebar';
 import { useAssetStore } from './stores/useAssetStore';
-import { PresenterProvider, usePresenter } from './PresenterContext';
+import { PresenterProvider } from './PresenterContext';
 import { Toolbar } from './components/canvas/Toolbar';
 import { ZoomHUD } from './components/canvas/ZoomHUD';
 import { useCanvasInteraction } from './hooks/useCanvasInteraction';
+import { useCanvasHotkeys } from './hooks/useCanvasHotkeys';
+import { useFilteredAssets } from './hooks/useFilteredAssets';
+import { useAutoFit } from './hooks/useAutoFit';
 
 const AppContent: React.FC = () => {
-  const presenter = usePresenter();
-  const { assets, selectedIds, activeTab, viewport } = useAssetStore();
+  const { selectedIds, viewport } = useAssetStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   
+  // 注入业务逻辑 Hooks
+  useCanvasHotkeys();
+  useAutoFit();
+  const filteredAssets = useFilteredAssets();
   const { startPanning, isPanning } = useCanvasInteraction(canvasRef);
-
-  // 初始化时自动自适应屏幕
-  useEffect(() => {
-    // 稍微延迟一下确保 DOM 布局已完成计算
-    const timer = setTimeout(() => {
-      presenter.assetManager.fitToScreen();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [presenter]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-
-      if (e.key.toLowerCase() === 'f') {
-        presenter.assetManager.fitToScreen();
-      }
-      if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        presenter.assetManager.setViewport({ zoom: 1 });
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [presenter]);
-
-  const filteredAssets = assets.filter(a => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'media') return a.type === 'image';
-    if (activeTab === 'video') return a.type === 'video';
-    if (activeTab === 'text') return a.type === 'text' || a.type === 'character' || a.type === 'scene';
-    return true;
-  });
 
   return (
     <div 
-      className={`relative h-screen w-screen bg-[#F8F9FA] overflow-hidden transition-colors duration-500 ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
-      onMouseDown={startPanning}
       ref={canvasRef}
+      onMouseDown={startPanning}
+      className={`relative h-screen w-screen bg-[#F8F9FA] overflow-hidden ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
       style={{ touchAction: 'none' }}
     >
+      {/* 1. 背景网格层 */}
       <div 
-        className="absolute inset-0 canvas-dot-grid opacity-[0.25] pointer-events-none transition-opacity duration-1000"
+        className="absolute inset-0 canvas-dot-grid opacity-[0.25] pointer-events-none"
         style={{ 
           backgroundPosition: `${viewport.x}px ${viewport.y}px`,
           backgroundSize: `${40 * viewport.zoom}px ${40 * viewport.zoom}px`
         }}
-      ></div>
+      />
 
+      {/* 2. 画布资产层 (支持位移与缩放) */}
       <div 
-        className="absolute inset-0 transition-transform duration-75 ease-out origin-top-left canvas-viewport-layer will-change-transform"
+        className="absolute inset-0 transition-transform duration-75 ease-out origin-top-left will-change-transform canvas-viewport-layer"
         style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}
       >
         {filteredAssets.map(asset => (
@@ -77,6 +51,7 @@ const AppContent: React.FC = () => {
         ))}
       </div>
 
+      {/* 3. UI 叠加层 */}
       <ZoomHUD />
       <Toolbar />
 

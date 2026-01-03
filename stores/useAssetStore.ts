@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { Asset, Viewport } from '../types';
 
-const MOCK_ASSETS: Asset[] = [
+export const MOCK_ASSETS: Asset[] = [
   {
     id: 'mock-1',
     type: 'text',
@@ -24,7 +24,7 @@ const MOCK_ASSETS: Asset[] = [
     id: 'mock-3',
     type: 'image',
     title: '分镜：天桥远景',
-    position: { x: 650, y: 500 },
+    position: { x: 650, y: 550 },
     content: 'https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&q=80&w=1000',
     metadata: { prompt: 'Cyberpunk city landscape, wide shot, cinematic lighting' },
     createdAt: Date.now() - 60000
@@ -39,7 +39,7 @@ interface AssetState {
   setAssets: (assets: Asset[] | ((prev: Asset[]) => Asset[])) => void;
   setViewport: (v: Viewport | ((prev: Viewport) => Viewport)) => void;
   setSelectedIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
-  setActiveTab: (tab: any) => void;
+  setActiveTab: (tab: 'all' | 'media' | 'video' | 'text' | 'scenes') => void;
 }
 
 export const useAssetStore = create<AssetState>((set) => ({
