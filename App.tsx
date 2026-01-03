@@ -56,7 +56,7 @@ const AppContent: React.FC = () => {
       ></div>
 
       <div 
-        className="absolute inset-0 transition-transform duration-75 ease-out origin-top-left canvas-viewport-layer"
+        className="absolute inset-0 transition-transform duration-75 ease-out origin-top-left canvas-viewport-layer will-change-transform"
         style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}
       >
         {filteredAssets.map(asset => (

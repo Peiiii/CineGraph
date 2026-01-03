@@ -14,7 +14,7 @@ export const ZoomHUD: React.FC = () => {
 
   return (
     <div 
-      className="absolute bottom-6 z-[100] flex items-center bg-white/90 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1.5 sharp-shadow gap-1"
+      className="no-canvas-interaction absolute bottom-6 z-[100] flex items-center bg-white/90 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1.5 sharp-shadow gap-1"
       style={{ left: 'calc(50% - 240px)', transform: 'translateX(-50%)' }}
     >
        <Tooltip content="缩小">

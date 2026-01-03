@@ -24,7 +24,7 @@ export const Toolbar: React.FC = () => {
   ];
 
   return (
-    <div className="absolute left-6 top-1/2 -translate-y-1/2 w-[68px] flex flex-col items-center py-6 bg-white/90 backdrop-blur-xl border border-[#E9ECEF] rounded-[2.5rem] sharp-shadow z-[100] gap-3">
+    <div className="no-canvas-interaction absolute left-6 top-1/2 -translate-y-1/2 w-[68px] flex flex-col items-center py-6 bg-white/90 backdrop-blur-xl border border-[#E9ECEF] rounded-[2.5rem] sharp-shadow z-[100] gap-3">
       {tools.map((item: any, idx: number) => (
         item.isSep ? (
           <div key={`sep-${idx}`} className="w-8 h-[1px] bg-[#F0F2F5] my-1"></div>

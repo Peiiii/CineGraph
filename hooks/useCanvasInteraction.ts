@@ -13,16 +13,18 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
     if (!el) return;
 
     const onWheel = (e: WheelEvent) => {
-      // 检查是否是缩放操作（触控板捏合或 Ctrl+滚轮）
+      const target = e.target as HTMLElement;
+      
+      // CRITICAL: If the event target is inside a UI component, don't move the canvas.
+      if (target.closest('.no-canvas-interaction')) {
+        return;
+      }
+
+      // Check if it's a zoom operation (Pinch on trackpad or Ctrl+Wheel)
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
 
-        // 提升敏感度：将缩放步长和基础系数调大
-        // deltaY 正常滚动通常是 100 或 -100
         const delta = -e.deltaY;
-        
-        // 使用更激进的缩放系数，基础 1.25 倍
-        // 敏感度系数从 0.0025 提升到 0.005，感官上会快一倍以上
         const zoomSpeed = 0.005; 
         const zoomFactor = Math.pow(1.25, (delta * zoomSpeed));
         const newZoom = viewport.zoom * zoomFactor;
@@ -34,15 +36,14 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
         const worldX = (mouseX - viewport.x) / viewport.zoom;
         const worldY = (mouseY - viewport.y) / viewport.zoom;
 
-        // 限制缩放范围在 0.05x 到 5x 之间
         const nextZoom = Math.max(0.05, Math.min(newZoom, 5));
         const newX = mouseX - worldX * nextZoom;
         const newY = mouseY - worldY * nextZoom;
 
         presenter.assetManager.setViewport({ zoom: nextZoom, x: newX, y: newY });
       } else {
-        // 普通平移逻辑
-        // 提高平移速度，1.5倍系数让拖拽更跟手
+        // Normal Panning (Wheel scroll)
+        // We only pan if we are not on a UI element (already checked above)
         presenter.assetManager.setViewport({ 
           x: viewport.x - e.deltaX * 1.5, 
           y: viewport.y - e.deltaY * 1.5 
@@ -50,7 +51,6 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
       }
     };
 
-    // 针对 Safari 的手势事件（捏合缩放）
     const onGestureStart = (e: Event) => e.preventDefault();
     const onGestureChange = (e: Event) => e.preventDefault();
 
@@ -67,7 +67,12 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
 
   const startPanning = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    // 只有点击背景或按住 Alt 键时才触发平移
+    
+    // Don't start panning if we click a UI element or an asset card button
+    if (target.closest('.no-canvas-interaction') || target.closest('button')) {
+      return;
+    }
+
     const isBackground = target === canvasRef.current || target.classList.contains('canvas-viewport-layer');
     
     if (e.button === 0 && (isBackground || e.altKey)) {

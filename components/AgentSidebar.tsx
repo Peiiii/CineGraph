@@ -17,7 +17,7 @@ const AgentSidebar: React.FC = () => {
   }, [messages]);
 
   return (
-    <div className="h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1.4rem] overflow-hidden relative shadow-sm">
+    <div className="no-canvas-interaction h-full flex flex-col bg-white border border-[#E9ECEF] rounded-[1.4rem] overflow-hidden relative shadow-sm">
       <header className="px-6 py-4 flex items-center justify-end gap-0.5 border-b border-[#F8F9FA]">
         <IconButton icon="fa-regular fa-plus-square" title="新建会话" className="!w-7 !h-7" tooltipPosition="bottom" />
         <IconButton icon="fa-solid fa-sliders" title="参数设置" className="!w-7 !h-7" tooltipPosition="bottom" />
