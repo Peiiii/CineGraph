@@ -2,7 +2,6 @@
 import React from 'react';
 import { useAssetStore } from '../../stores/useAssetStore';
 import { usePresenter } from '../../PresenterContext';
-import { Tooltip } from '../ui/Tooltip';
 import { ActionButton } from '../ui/ActionButton';
 
 export const ZoomHUD: React.FC = () => {
@@ -15,26 +14,46 @@ export const ZoomHUD: React.FC = () => {
 
   return (
     <div 
-      className="no-canvas-interaction absolute bottom-6 z-[100] flex items-center bg-white/95 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1.5 sharp-shadow gap-1"
+      className="no-canvas-interaction absolute bottom-6 z-[100] flex items-center bg-white/95 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1 sharp-shadow gap-0.5"
       style={{ left: 'calc(50% - 240px)', transform: 'translateX(-50%)' }}
     >
-       <ActionButton icon="fas fa-minus" title="缩小" onClick={() => adjustZoom(-0.2)} />
-       
-       <Tooltip content="自适应视图 (F)">
-         <button 
-           onClick={() => presenter.assetManager.fitToScreen()}
-           className="px-3.5 h-9 rounded-full hover:bg-[#F1F3F5] transition-all flex items-center justify-center gap-2.5 group"
-         >
-           <span className="text-[12px] font-bold text-[#1A1C1E] min-w-[32px] tabular-nums text-center">{Math.round(viewport.zoom * 100)}%</span>
-           <i className="fas fa-expand text-[11px] text-[#ADB5BD] group-hover:text-[#1A1C1E]"></i>
-         </button>
-       </Tooltip>
+      {/* 缩小按钮 */}
+      <ActionButton 
+        icon="fas fa-minus" 
+        title="缩小" 
+        onClick={() => adjustZoom(-0.1)} 
+      />
+      
+      {/* 百分比显示 */}
+      <div className="px-2 min-w-[54px] text-center">
+        <span className="text-[13px] font-bold text-[#1A1C1E] tabular-nums">
+          {Math.round(viewport.zoom * 100)}%
+        </span>
+      </div>
 
-       <ActionButton icon="fas fa-plus" title="放大" onClick={() => adjustZoom(0.2)} />
-       
-       <div className="w-[1px] h-4 bg-[#E9ECEF] mx-1"></div>
+      {/* 放大按钮 */}
+      <ActionButton 
+        icon="fas fa-plus" 
+        title="放大" 
+        onClick={() => adjustZoom(0.1)} 
+      />
+      
+      {/* 分隔符 */}
+      <div className="w-[1px] h-4 bg-[#E9ECEF] mx-1.5"></div>
 
-       <ActionButton icon="fas fa-rotate-left" title="重置 (Ctrl+0)" onClick={() => presenter.assetManager.setViewport({ zoom: 1 })} />
+      {/* 恢复 100% 按钮 */}
+      <ActionButton 
+        icon="fas fa-rotate-left" 
+        title="恢复 100% (Ctrl+0)" 
+        onClick={() => presenter.assetManager.setViewport({ zoom: 1 })} 
+      />
+
+      {/* 一键自适应按钮 */}
+      <ActionButton 
+        icon="fas fa-expand" 
+        title="一键自适应 (F)" 
+        onClick={() => presenter.assetManager.fitToScreen()} 
+      />
     </div>
   );
 };
