@@ -35,10 +35,12 @@ interface AssetState {
   viewport: Viewport;
   selectedIds: Set<string>;
   activeTab: 'all' | 'media' | 'video' | 'text' | 'scenes' | 'character';
+  isInteracting: boolean; // 是否正在交互（拖拽/缩放）
   setAssets: (assets: Asset[] | ((prev: Asset[]) => Asset[])) => void;
   setViewport: (v: Viewport | ((prev: Viewport) => Viewport)) => void;
   setSelectedIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   setActiveTab: (tab: 'all' | 'media' | 'video' | 'text' | 'scenes' | 'character') => void;
+  setIsInteracting: (val: boolean) => void;
 }
 
 export const useAssetStore = create<AssetState>((set) => ({
@@ -46,6 +48,7 @@ export const useAssetStore = create<AssetState>((set) => ({
   viewport: { x: 0, y: 0, zoom: 1 },
   selectedIds: new Set(),
   activeTab: 'all',
+  isInteracting: false,
   setAssets: (assets) => set((state) => ({ 
     assets: typeof assets === 'function' ? assets(state.assets) : assets 
   })),
@@ -56,4 +59,5 @@ export const useAssetStore = create<AssetState>((set) => ({
     selectedIds: typeof ids === 'function' ? ids(state.selectedIds) : ids 
   })),
   setActiveTab: (tab) => set({ activeTab: tab }),
+  setIsInteracting: (val) => set({ isInteracting: val }),
 }));

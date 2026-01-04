@@ -30,66 +30,69 @@ export class AssetManager {
   };
 
   /**
-   * 核心聚焦逻辑：计算一组资产的范围，并自动计算最佳缩放比例和居中位置
-   * 优化版：更小的边距，更高的利用率
+   * 极简而精确的几何聚焦
    */
   private applyFocusToAssets = (targetAssets: Asset[]) => {
     if (targetAssets.length === 0) return;
 
-    const { setViewport } = useAssetStore.getState();
+    const { setViewport, setIsInteracting } = useAssetStore.getState();
     
-    // 配置参数 - 更加激进的布局
-    const cardWidth = 420;
-    const safePadding = 40; // 从 80 降至 40，增加利用率
+    // 启用动画
+    setIsInteracting(false);
 
-    // 避让 UI 区域
-    const toolbarWidth = 85;   
-    const sidebarWidth = 380; 
-    const topBarHeight = 20;   
-    const bottomHUDHeight = 100; 
+    // --- 1. 定义视觉可见矩形 (避开 UI 遮挡) ---
+    const UI_LEFT = 85;   // Toolbar
+    const UI_RIGHT = 380; // Agent Sidebar
+    const UI_BOTTOM = 80; // 底部 HUD 区域
+    const UI_TOP = 0;     // 顶部通常是空的
 
-    const usableWidth = window.innerWidth - toolbarWidth - sidebarWidth;
-    const usableHeight = window.innerHeight - topBarHeight - bottomHUDHeight;
+    const usableRect = {
+      left: UI_LEFT,
+      right: window.innerWidth - UI_RIGHT,
+      top: UI_TOP,
+      bottom: window.innerHeight - UI_BOTTOM
+    };
 
-    // 计算选中目标的包围盒 (World Space)
+    const usableWidth = usableRect.right - usableRect.left;
+    const usableHeight = usableRect.bottom - usableRect.top;
+
+    // --- 2. 计算资产群组的“世界坐标”包围盒 ---
+    const CARD_WIDTH = 420;
     const minX = Math.min(...targetAssets.map(a => a.position.x));
-    const maxX = Math.max(...targetAssets.map(a => a.position.x + cardWidth));
+    const maxX = Math.max(...targetAssets.map(a => a.position.x + CARD_WIDTH));
     const minY = Math.min(...targetAssets.map(a => a.position.y));
     const maxY = Math.max(...targetAssets.map(a => {
-      // 不同类型卡片高度不同
-      let height = 450; 
-      if (a.type === 'character') height = 620;
-      if (a.type === 'image' || a.type === 'video') height = 300;
-      return a.position.y + height;
+      // 预估卡片高度（带有一点余量以保证视觉重心居中）
+      let h = 350;
+      if (a.type === 'character') h = 550;
+      if (a.type === 'image' || a.type === 'video') h = 280;
+      return a.position.y + h;
     }));
 
     const contentWidth = maxX - minX;
     const contentHeight = maxY - minY;
 
-    // 计算缩放比例
-    const zoomX = (usableWidth - safePadding * 2) / contentWidth;
-    const zoomY = (usableHeight - safePadding * 2) / contentHeight;
-    
+    // --- 3. 计算最佳缩放 ---
+    const PADDING = 24; 
+    const zoomX = (usableWidth - PADDING * 2) / contentWidth;
+    const zoomY = (usableHeight - PADDING * 2) / contentHeight;
     let nextZoom = Math.min(zoomX, zoomY);
     
-    // 提升上限，允许更近距离的观察
-    if (targetAssets.length === 1) {
-      nextZoom = Math.min(nextZoom, 1.1); // 单卡片允许略微放大超过 1:1
-    } else {
-      nextZoom = Math.min(nextZoom, 1.0); // 多卡片最高 1.0
-    }
-
+    // 针对单卡或多卡设置合理的缩放上限
+    nextZoom = targetAssets.length === 1 ? Math.min(nextZoom, 1.4) : Math.min(nextZoom, 1.05);
     nextZoom = Math.max(0.1, nextZoom);
 
-    // 计算显示中心
-    const viewCenterX = toolbarWidth + usableWidth / 2;
-    const viewCenterY = topBarHeight + (usableHeight / 2) - 20; // 视觉重心上移 20px
+    // --- 4. 完美对齐视觉中心 ---
+    // 我们的目标是让 [assetCenterX, assetCenterY] 在缩放后，
+    // 重合在屏幕上的 [visualCenterX, visualCenterY]。
+    const visualCenterX = (usableRect.left + usableRect.right) / 2;
+    const visualCenterY = (usableRect.top + usableRect.bottom) / 2;
 
-    const contentCenterX = (minX + maxX) / 2;
-    const contentCenterY = (minY + maxY) / 2;
+    const assetCenterX = (minX + maxX) / 2;
+    const assetCenterY = (minY + maxY) / 2;
 
-    const nextX = viewCenterX - contentCenterX * nextZoom;
-    const nextY = viewCenterY - contentCenterY * nextZoom;
+    const nextX = visualCenterX - (assetCenterX * nextZoom);
+    const nextY = visualCenterY - (assetCenterY * nextZoom);
 
     setViewport({ x: nextX, y: nextY, zoom: nextZoom });
   };
@@ -106,7 +109,6 @@ export class AssetManager {
   focusSelected = () => {
     const { assets, selectedIds } = useAssetStore.getState();
     const selectedAssets = assets.filter(a => selectedIds.has(a.id));
-    
     if (selectedAssets.length === 0) {
       this.fitToScreen();
     } else {

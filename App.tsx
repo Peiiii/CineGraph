@@ -12,10 +12,9 @@ import { useFilteredAssets } from './hooks/useFilteredAssets';
 import { useAutoFit } from './hooks/useAutoFit';
 
 const AppContent: React.FC = () => {
-  const { selectedIds, viewport } = useAssetStore();
+  const { selectedIds, viewport, isInteracting } = useAssetStore();
   const canvasRef = useRef<HTMLDivElement>(null);
   
-  // 注入业务逻辑 Hooks
   useCanvasHotkeys();
   useAutoFit();
   const filteredAssets = useFilteredAssets();
@@ -37,9 +36,14 @@ const AppContent: React.FC = () => {
         }}
       />
 
-      {/* 2. 画布资产层 (支持位移与缩放) - 优化过渡动画使其更平滑 */}
+      {/* 2. 画布资产层 
+          关键修改：当 isInteracting 为 true（用户手动操控）时，禁用 transition。
+          只有在自动聚焦等非交互状态下才启用平滑动画。
+      */}
       <div 
-        className="absolute inset-0 transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1) origin-top-left will-change-transform canvas-viewport-layer"
+        className={`absolute inset-0 origin-top-left will-change-transform canvas-viewport-layer ${
+          !isInteracting ? 'transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1)' : ''
+        }`}
         style={{ 
           transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` 
         }}
@@ -57,7 +61,6 @@ const AppContent: React.FC = () => {
       <ZoomHUD />
       <Toolbar />
 
-      {/* 右侧 Agent 面板 - 宽度调整为 380px */}
       <div className="absolute right-2 top-2 bottom-2 w-[380px] z-[200]">
         <AgentSidebar />
       </div>
