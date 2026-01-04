@@ -31,20 +31,20 @@ export class AssetManager {
 
   /**
    * 核心聚焦逻辑：计算一组资产的范围，并自动计算最佳缩放比例和居中位置
+   * 优化版：更小的边距，更高的利用率
    */
   private applyFocusToAssets = (targetAssets: Asset[]) => {
     if (targetAssets.length === 0) return;
 
     const { setViewport } = useAssetStore.getState();
     
-    // 配置参数
+    // 配置参数 - 更加激进的布局
     const cardWidth = 420;
-    const cardHeightEstimate = 500; // 预留稍微多一点高度
-    const safePadding = 80; // 四周预留边距
+    const safePadding = 40; // 从 80 降至 40，增加利用率
 
-    // 可用区域计算 (避开 UI 遮挡)
+    // 避让 UI 区域
     const toolbarWidth = 85;   
-    const sidebarWidth = 380; // 侧边栏宽度
+    const sidebarWidth = 380; 
     const topBarHeight = 20;   
     const bottomHUDHeight = 100; 
 
@@ -55,42 +55,42 @@ export class AssetManager {
     const minX = Math.min(...targetAssets.map(a => a.position.x));
     const maxX = Math.max(...targetAssets.map(a => a.position.x + cardWidth));
     const minY = Math.min(...targetAssets.map(a => a.position.y));
-    const maxY = Math.max(...targetAssets.map(a => a.position.y + (a.type === 'character' ? 600 : cardHeightEstimate)));
+    const maxY = Math.max(...targetAssets.map(a => {
+      // 不同类型卡片高度不同
+      let height = 450; 
+      if (a.type === 'character') height = 620;
+      if (a.type === 'image' || a.type === 'video') height = 300;
+      return a.position.y + height;
+    }));
 
     const contentWidth = maxX - minX;
     const contentHeight = maxY - minY;
 
-    // 计算能够让内容完全进入可用区域的缩放比例
+    // 计算缩放比例
     const zoomX = (usableWidth - safePadding * 2) / contentWidth;
     const zoomY = (usableHeight - safePadding * 2) / contentHeight;
     
-    // 最终缩放值：取最小值确保不超出，并设置安全上限
     let nextZoom = Math.min(zoomX, zoomY);
     
-    // 针对单张资产的特殊优化：不要放得太大，保持在一个舒适的 0.8-0.9 比例
+    // 提升上限，允许更近距离的观察
     if (targetAssets.length === 1) {
-      nextZoom = Math.min(nextZoom, 0.85);
+      nextZoom = Math.min(nextZoom, 1.1); // 单卡片允许略微放大超过 1:1
     } else {
-      // 多张资产时，允许稍微大一点但最高不超过 1.0
-      nextZoom = Math.min(nextZoom, 1.0);
+      nextZoom = Math.min(nextZoom, 1.0); // 多卡片最高 1.0
     }
 
-    // 确保缩放不低于最小值
     nextZoom = Math.max(0.1, nextZoom);
 
-    // 计算可用区域的中心点 (Screen Space)
+    // 计算显示中心
     const viewCenterX = toolbarWidth + usableWidth / 2;
-    const viewCenterY = topBarHeight + usableHeight / 2;
+    const viewCenterY = topBarHeight + (usableHeight / 2) - 20; // 视觉重心上移 20px
 
-    // 计算内容的几何中心 (World Space)
     const contentCenterX = (minX + maxX) / 2;
     const contentCenterY = (minY + maxY) / 2;
 
-    // 计算应用缩放后的偏移量
     const nextX = viewCenterX - contentCenterX * nextZoom;
     const nextY = viewCenterY - contentCenterY * nextZoom;
 
-    // 应用变换
     setViewport({ x: nextX, y: nextY, zoom: nextZoom });
   };
 
