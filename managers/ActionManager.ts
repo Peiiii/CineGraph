@@ -9,12 +9,14 @@ export class ActionManager {
     const { viewport, setAssets } = useAssetStore.getState();
     const { setMessages } = useChatStore.getState();
 
+    const isUpdate = name === 'update_creative_asset';
+
     // 更新 UI 状态
     setMessages(prev => {
       const next = [...prev];
       next[next.length - 1] = { 
         ...next[next.length - 1],
-        content: `🎬 **导演指令下达:** \`${name}\`...`, 
+        content: isUpdate ? `✍️ **导演正在润色内容...**` : `🎬 **导演指令下达:** \`${name}\`...`, 
         isExecuting: true, 
         step: 'generating' 
       };
@@ -27,6 +29,32 @@ export class ActionManager {
         y: -viewport.y / viewport.zoom + (window.innerHeight / 2) / viewport.zoom - 150,
       };
 
+      if (name === 'update_creative_asset') {
+        const targetId = args.asset_id;
+        const targetAsset = useAssetStore.getState().assets.find(a => a.id === targetId);
+        
+        if (!targetAsset) throw new Error(`找不到 ID 为 ${targetId} 的资产`);
+
+        setAssets(prev => prev.map(a => 
+          a.id === targetId 
+            ? { ...a, content: args.content, title: args.title || a.title } 
+            : a
+        ));
+
+        setMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { 
+            role: 'assistant', 
+            content: `✅ **资产已更新:** [${args.title || targetAsset.title}] 已根据您的指令完成润色。`, 
+            isExecuting: false,
+            step: 'done' 
+          };
+          return updated;
+        });
+        return;
+      }
+
+      // 处理新建资产
       let newAsset: Asset | null = null;
       const assetId = Math.random().toString(36).substr(2, 9);
 
@@ -55,7 +83,16 @@ export class ActionManager {
         });
       }
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `❌ 创意执行失败 [${name}]: ${err.message}` }]);
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1] = { 
+          role: 'assistant', 
+          content: `❌ 执行失败: ${err.message}`, 
+          isExecuting: false,
+          step: 'done' 
+        };
+        return updated;
+      });
     }
   }
 }
