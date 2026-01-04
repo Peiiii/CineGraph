@@ -6,7 +6,7 @@ import { ActionButton } from '../ui/ActionButton';
 
 export const ZoomHUD: React.FC = () => {
   const presenter = usePresenter();
-  const { viewport } = useAssetStore();
+  const { viewport, selectedIds } = useAssetStore();
 
   const adjustZoom = (delta: number) => {
     presenter.assetManager.setViewport(v => ({...v, zoom: v.zoom + delta}));
@@ -17,6 +17,16 @@ export const ZoomHUD: React.FC = () => {
       className="no-canvas-interaction absolute bottom-6 z-[100] flex items-center bg-white/95 backdrop-blur-md border border-[#E9ECEF] rounded-full px-2 py-1 sharp-shadow gap-0.5"
       style={{ left: 'calc(50% - 240px)', transform: 'translateX(-50%)' }}
     >
+      {/* 聚焦按钮 - 仅在有选中时高亮或具有特殊含义 */}
+      <ActionButton 
+        icon="fa-solid fa-crosshairs" 
+        title={selectedIds.size > 0 ? "聚焦选中资产 (Z)" : "聚焦工作区 (Z)"} 
+        className={selectedIds.size > 0 ? "!text-[#0066FF] !bg-blue-50" : ""}
+        onClick={() => presenter.assetManager.focusSelected()} 
+      />
+
+      <div className="w-[1px] h-4 bg-[#E9ECEF] mx-1"></div>
+
       {/* 缩小按钮 */}
       <ActionButton 
         icon="fas fa-minus" 
@@ -51,7 +61,7 @@ export const ZoomHUD: React.FC = () => {
       {/* 一键自适应按钮 */}
       <ActionButton 
         icon="fas fa-expand" 
-        title="一键自适应 (F)" 
+        title="全景视角 (F)" 
         onClick={() => presenter.assetManager.fitToScreen()} 
       />
     </div>

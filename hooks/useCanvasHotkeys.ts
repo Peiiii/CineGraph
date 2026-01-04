@@ -10,10 +10,18 @@ export const useCanvasHotkeys = () => {
       const target = e.target as HTMLElement;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
-      // F: 自适应屏幕
-      if (e.key.toLowerCase() === 'f') {
+      const key = e.key.toLowerCase();
+
+      // Z: 聚焦选中或全屏
+      if (key === 'z') {
+        presenter.assetManager.focusSelected();
+      }
+      
+      // F: 全屏自适应
+      if (key === 'f') {
         presenter.assetManager.fitToScreen();
       }
+
       // Ctrl/Meta + 0: 恢复 100%
       if (e.key === '0' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();

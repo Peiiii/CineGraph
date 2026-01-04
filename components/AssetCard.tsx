@@ -20,7 +20,6 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    // 允许点击按钮，不触发拖拽
     if (target.closest('button')) return;
 
     e.stopPropagation();
@@ -46,7 +45,16 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     
-    if (!selected) presenter.assetManager.toggleSelection(asset.id);
+    // 支持 Ctrl/Shift 多选
+    presenter.assetManager.toggleSelection(asset.id, e.ctrlKey || e.shiftKey || e.metaKey);
+  };
+
+  const handleFocusClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    presenter.assetManager.toggleSelection(asset.id, false);
+    setTimeout(() => {
+      presenter.assetManager.focusSelected();
+    }, 50);
   };
 
   return (
@@ -60,31 +68,35 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, selected }) => {
       }}
       className={`group flex flex-col gap-3 cursor-grab active:cursor-grabbing w-[420px] select-none ${isDragging ? 'opacity-80' : 'opacity-100'}`}
     >
-      <div className={`relative transition-shadow duration-300 ${
+      <div className={`relative transition-all duration-300 ${
         selected 
-        ? 'ring-[3px] ring-[#0066FF] rounded-[2rem] shadow-[0_20px_60px_-10px_rgba(0,102,255,0.2)]' 
+        ? 'ring-[3px] ring-[#0066FF] rounded-[2rem] shadow-[0_20px_60px_-10px_rgba(0,102,255,0.25)]' 
         : 'bg-white rounded-[2rem] border border-[#E9ECEF] sharp-shadow hover:shadow-xl'
       }`}>
-        {/* 内容裁剪层 */}
         <div className="w-full h-full rounded-[1.8rem] overflow-hidden">
           <AssetRenderer asset={asset} />
         </div>
         
         {/* 操作交互层 */}
-        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
+          <ActionButton 
+            icon="fa-solid fa-crosshairs" 
+            title="聚焦查看" 
+            className="bg-white/90 backdrop-blur shadow-sm hover:!bg-[#0066FF] hover:!text-white"
+            onClick={handleFocusClick}
+          />
           <ActionButton 
             icon="fa-solid fa-trash-can" 
-            title="从工作区移除" 
+            title="移除" 
             className="bg-white/90 backdrop-blur shadow-sm hover:!bg-red-500 hover:!text-white"
-            onClick={() => presenter.assetManager.removeAsset(asset.id)}
+            onClick={(e) => { e.stopPropagation(); presenter.assetManager.removeAsset(asset.id); }}
           />
         </div>
       </div>
       
-      {/* 底部信息栏 */}
       <div className="flex items-center px-4">
-        <div className={`h-1.2 w-1.2 rounded-full mr-2.5 ${selected ? 'bg-[#0066FF]' : 'bg-[#E9ECEF]'}`}></div>
-        <h3 className={`text-[10px] font-bold uppercase tracking-[0.15em] transition-colors ${selected ? 'text-black' : 'text-[#ADB5BD]'}`}>
+        <div className={`h-1.5 w-1.5 rounded-full mr-2.5 transition-colors ${selected ? 'bg-[#0066FF] animate-pulse' : 'bg-[#CED4DA]'}`}></div>
+        <h3 className={`text-[10px] font-bold uppercase tracking-[0.2em] transition-colors ${selected ? 'text-black' : 'text-[#ADB5BD]'}`}>
           {asset.title}
         </h3>
       </div>

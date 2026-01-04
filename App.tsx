@@ -37,10 +37,12 @@ const AppContent: React.FC = () => {
         }}
       />
 
-      {/* 2. 画布资产层 (支持位移与缩放) */}
+      {/* 2. 画布资产层 (支持位移与缩放) - 优化过渡动画使其更平滑 */}
       <div 
-        className="absolute inset-0 transition-transform duration-75 ease-out origin-top-left will-change-transform canvas-viewport-layer"
-        style={{ transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` }}
+        className="absolute inset-0 transition-transform duration-500 cubic-bezier(0.25, 1, 0.5, 1) origin-top-left will-change-transform canvas-viewport-layer"
+        style={{ 
+          transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` 
+        }}
       >
         {filteredAssets.map(asset => (
           <AssetCard 
