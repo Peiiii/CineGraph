@@ -9,16 +9,22 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
   const [isPanning, setIsPanning] = useState(false);
   const interactionTimer = useRef<number | null>(null);
 
-  // 辅助函数：进入交互模式（禁用动画）
+  // 辅助函数：快速进入交互模式
   const startInteraction = () => {
+    // 立即广播交互开始状态
     setIsInteracting(true);
-    if (interactionTimer.current) window.clearTimeout(interactionTimer.current);
+    if (interactionTimer.current) {
+      window.clearTimeout(interactionTimer.current);
+      interactionTimer.current = null;
+    }
   };
 
-  // 辅助函数：结束交互模式（延时恢复动画，避免闪烁）
+  // 辅助函数：延迟结束交互模式
   const endInteraction = () => {
+    if (interactionTimer.current) window.clearTimeout(interactionTimer.current);
     interactionTimer.current = window.setTimeout(() => {
       setIsInteracting(false);
+      interactionTimer.current = null;
     }, 150) as any;
   };
 
@@ -27,10 +33,12 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
     if (!el) return;
 
     const onWheel = (e: WheelEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('.no-canvas-interaction')) return;
+      // 排除干扰区域
+      if ((e.target as HTMLElement).closest('.no-canvas-interaction')) return;
 
       e.preventDefault();
+      
+      // 关键：一旦有事件流进来，立即禁用 transition
       startInteraction();
 
       if (e.ctrlKey || e.metaKey) {
@@ -51,7 +59,7 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
 
         presenter.assetManager.setViewport({ zoom: newZoom, x: nextX, y: nextY });
       } else {
-        // 拖拽逻辑：触控板 1:1 响应，不加倍率以保证精确度
+        // 拖拽逻辑：1:1 线性响应触控板
         presenter.assetManager.setViewport({ 
           x: viewport.x - e.deltaX, 
           y: viewport.y - e.deltaY 

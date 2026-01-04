@@ -30,21 +30,21 @@ export class AssetManager {
   };
 
   /**
-   * 极简而精确的几何聚焦
+   * 增强型聚焦：确保绝对垂直居中并预留垂直边距
    */
   private applyFocusToAssets = (targetAssets: Asset[]) => {
     if (targetAssets.length === 0) return;
 
     const { setViewport, setIsInteracting } = useAssetStore.getState();
     
-    // 启用动画
+    // 强制先结束交互状态以启用跳转动画
     setIsInteracting(false);
 
-    // --- 1. 定义视觉可见矩形 (避开 UI 遮挡) ---
-    const UI_LEFT = 85;   // Toolbar
-    const UI_RIGHT = 380; // Agent Sidebar
-    const UI_BOTTOM = 80; // 底部 HUD 区域
-    const UI_TOP = 0;     // 顶部通常是空的
+    // --- 1. 精确 UI 区域定义 ---
+    const UI_LEFT = 88;    // Toolbar 宽度
+    const UI_RIGHT = 396;  // Sidebar 宽度 + 间距
+    const UI_BOTTOM = 110; // ZoomHUD 浮动高度 + 安全余量
+    const UI_TOP = 40;     // 顶部呼吸感边距
 
     const usableRect = {
       left: UI_LEFT,
@@ -56,44 +56,54 @@ export class AssetManager {
     const usableWidth = usableRect.right - usableRect.left;
     const usableHeight = usableRect.bottom - usableRect.top;
 
-    // --- 2. 计算资产群组的“世界坐标”包围盒 ---
+    // --- 2. 资产物理边界计算 ---
     const CARD_WIDTH = 420;
     const minX = Math.min(...targetAssets.map(a => a.position.x));
     const maxX = Math.max(...targetAssets.map(a => a.position.x + CARD_WIDTH));
     const minY = Math.min(...targetAssets.map(a => a.position.y));
     const maxY = Math.max(...targetAssets.map(a => {
-      // 预估卡片高度（带有一点余量以保证视觉重心居中）
-      let h = 350;
-      if (a.type === 'character') h = 550;
-      if (a.type === 'image' || a.type === 'video') h = 280;
-      return a.position.y + h;
+      // 对高度预估进行精算，这是垂直居中的关键
+      let h = 320; 
+      if (a.type === 'character') h = 540;
+      if (a.type === 'image' || a.type === 'video') h = 276;
+      if (a.type === 'text' || a.type === 'scene') h = 360;
+      return a.position.y + h + 40; // 40 为卡片下方阴影和标题高度
     }));
 
     const contentWidth = maxX - minX;
     const contentHeight = maxY - minY;
 
-    // --- 3. 计算最佳缩放 ---
-    const PADDING = 24; 
-    const zoomX = (usableWidth - PADDING * 2) / contentWidth;
-    const zoomY = (usableHeight - PADDING * 2) / contentHeight;
+    // --- 3. 缩放算法（包含强制边距） ---
+    const HORIZONTAL_MARGIN = 40;
+    const VERTICAL_MARGIN = 60; // 明确的上下边距，防止贴边
+
+    const zoomX = (usableWidth - HORIZONTAL_MARGIN * 2) / contentWidth;
+    const zoomY = (usableHeight - VERTICAL_MARGIN * 2) / contentHeight;
+    
     let nextZoom = Math.min(zoomX, zoomY);
     
-    // 针对单卡或多卡设置合理的缩放上限
-    nextZoom = targetAssets.length === 1 ? Math.min(nextZoom, 1.4) : Math.min(nextZoom, 1.05);
+    // 动态调整缩放阈值
+    if (targetAssets.length === 1) {
+      nextZoom = Math.min(nextZoom, 1.3); 
+    } else {
+      nextZoom = Math.min(nextZoom, 1.0);
+    }
     nextZoom = Math.max(0.1, nextZoom);
 
-    // --- 4. 完美对齐视觉中心 ---
-    // 我们的目标是让 [assetCenterX, assetCenterY] 在缩放后，
-    // 重合在屏幕上的 [visualCenterX, visualCenterY]。
-    const visualCenterX = (usableRect.left + usableRect.right) / 2;
-    const visualCenterY = (usableRect.top + usableRect.bottom) / 2;
+    // --- 4. 视觉几何中心对齐 ---
+    // 目标点：视觉可用区域的中心坐标
+    const targetVisualX = (usableRect.left + usableRect.right) / 2;
+    const targetVisualY = (usableRect.top + usableRect.bottom) / 2;
 
+    // 资产中心点（世界坐标）
     const assetCenterX = (minX + maxX) / 2;
     const assetCenterY = (minY + maxY) / 2;
 
-    const nextX = visualCenterX - (assetCenterX * nextZoom);
-    const nextY = visualCenterY - (assetCenterY * nextZoom);
+    // ViewportOffset = TargetScreenPos - (WorldPos * Zoom)
+    const nextX = targetVisualX - (assetCenterX * nextZoom);
+    const nextY = targetVisualY - (assetCenterY * nextZoom);
 
+    // 应用变换
     setViewport({ x: nextX, y: nextY, zoom: nextZoom });
   };
 
