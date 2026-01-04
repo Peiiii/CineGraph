@@ -1,5 +1,5 @@
 
-import { useState, RefObject, useEffect } from 'react';
+import React, { useState, RefObject, useEffect } from 'react';
 import { usePresenter } from '../PresenterContext';
 import { useAssetStore } from '../stores/useAssetStore';
 
@@ -65,6 +65,7 @@ export const useCanvasInteraction = (canvasRef: RefObject<HTMLDivElement>) => {
     };
   }, [viewport, presenter]);
 
+  // Added React.MouseEvent type which requires React namespace
   const startPanning = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     

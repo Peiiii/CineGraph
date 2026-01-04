@@ -9,7 +9,8 @@ export const useFilteredAssets = (): Asset[] => {
     if (activeTab === 'all') return true;
     if (activeTab === 'media') return a.type === 'image';
     if (activeTab === 'video') return a.type === 'video';
-    if (activeTab === 'text') return a.type === 'text' || a.type === 'character' || a.type === 'scene';
+    if (activeTab === 'text') return a.type === 'text' || a.type === 'scene';
+    if (activeTab === 'character') return a.type === 'character';
     return true;
   });
 };

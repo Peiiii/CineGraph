@@ -11,7 +11,7 @@ export interface Message {
 
 interface ChatState {
   messages: Message[];
-  isTyping: false;
+  isTyping: boolean;
   input: string;
   setMessages: (msgs: Message[] | ((prev: Message[]) => Message[])) => void;
   setInput: (input: string) => void;

@@ -5,15 +5,35 @@ import { GeminiService } from '../services/geminiService';
 import { globalPresenter } from '../Presenter';
 
 export class ChatManager {
+  private currentAbortController: AbortController | null = null;
+
   setInput = (val: string) => {
     useChatStore.getState().setInput(val);
   };
 
   newChat = () => {
+    this.stopResponse();
     const { setMessages, setIsTyping, setInput } = useChatStore.getState();
     setMessages([]);
     setIsTyping(false);
     setInput('');
+  };
+
+  stopResponse = () => {
+    if (this.currentAbortController) {
+      this.currentAbortController.abort();
+      this.currentAbortController = null;
+    }
+    useChatStore.getState().setIsTyping(false);
+    useChatStore.getState().setMessages(prev => {
+      if (prev.length === 0) return prev;
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (last.role === 'assistant') {
+        next[next.length - 1] = { ...last, isStreaming: false, isExecuting: false };
+      }
+      return next;
+    });
   };
 
   sendMessage = async () => {
@@ -32,14 +52,22 @@ export class ChatManager {
     ]);
     setIsTyping(true);
 
+    // 初始化新的中止控制器
+    this.currentAbortController = new AbortController();
+    const signal = this.currentAbortController.signal;
+
     try {
       const stream = await GeminiService.chatWithAgentStream(userMsg, contextAssets);
       let accumulatedText = "";
 
       for await (const chunk of stream) {
+        // 检查是否已被中止
+        if (signal.aborted) break;
+
         if (chunk.text) {
           accumulatedText += chunk.text;
           setMessages(prev => {
+            if (signal.aborted) return prev;
             const next = [...prev];
             next[next.length - 1] = { ...next[next.length - 1], content: accumulatedText, step: 'writing', isStreaming: true };
             return next;
@@ -49,23 +77,30 @@ export class ChatManager {
         const parts = chunk.candidates?.[0]?.content?.parts || [];
         const calls = parts.filter(p => p.functionCall).map(p => p.functionCall!);
 
-        // 委托给 ActionManager 执行具体资产创建逻辑
-        if (calls.length > 0) {
+        if (calls.length > 0 && !signal.aborted) {
           for (const call of calls) {
+            if (signal.aborted) break;
             await globalPresenter.actionManager.executeFunctionCall(call.name, call.args, contextAssets);
           }
         }
       }
 
-      setMessages(prev => {
-        const next = [...prev];
-        next[next.length - 1] = { ...next[next.length - 1], isStreaming: false };
-        return next;
-      });
+      if (!signal.aborted) {
+        setMessages(prev => {
+          const next = [...prev];
+          next[next.length - 1] = { ...next[next.length - 1], isStreaming: false };
+          return next;
+        });
+      }
 
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 通信异常: ${err.message}` }]);
+      if (err.name !== 'AbortError') {
+        setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ 通信异常: ${err.message}` }]);
+      }
     } finally {
+      if (this.currentAbortController?.signal === signal) {
+        this.currentAbortController = null;
+      }
       setIsTyping(false);
     }
   };

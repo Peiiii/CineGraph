@@ -9,7 +9,13 @@ export const ChatInput: React.FC = () => {
   const presenter = usePresenter();
   const { input, isTyping } = useChatStore();
 
-  const handleSend = () => presenter.chatManager.sendMessage();
+  const handleSend = () => {
+    if (isTyping) {
+      presenter.chatManager.stopResponse();
+    } else {
+      presenter.chatManager.sendMessage();
+    }
+  };
 
   return (
     <div className="px-4 pb-4 pt-1">
@@ -17,7 +23,12 @@ export const ChatInput: React.FC = () => {
         <textarea
           value={input}
           onChange={(e) => presenter.chatManager.setInput(e.target.value)}
-          onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}}
+          onKeyDown={(e) => { 
+            if(e.key === 'Enter' && !e.shiftKey) { 
+              e.preventDefault(); 
+              if (!isTyping) handleSend(); 
+            }
+          }}
           placeholder="在此输入指令..."
           className="w-full bg-transparent px-1 text-[13px] focus:outline-none resize-none h-14 placeholder:text-[#ADB5BD] text-black font-medium leading-normal"
         />
@@ -36,18 +47,20 @@ export const ChatInput: React.FC = () => {
           </div>
 
           <div className="flex items-center">
-             <Tooltip content="发送 (Enter)" position="top">
+             <Tooltip content={isTyping ? "停止响应" : "发送 (Enter)"} position="top">
                <button 
                  onClick={handleSend}
-                 disabled={isTyping || !input.trim()}
+                 disabled={!isTyping && !input.trim()}
                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${
-                   isTyping || !input.trim() 
+                   !isTyping && !input.trim() 
                      ? 'bg-[#F1F3F5] text-[#CED4DA]' 
-                     : 'bg-[#1A1C1E] text-white hover:bg-black shadow-sm'
+                     : isTyping 
+                       ? 'bg-red-50 text-red-500 hover:bg-red-500 hover:text-white' 
+                       : 'bg-[#1A1C1E] text-white hover:bg-black shadow-sm'
                  }`}
                >
                  {isTyping ? (
-                   <i className="fa-solid fa-circle-notch animate-spin text-[10px]"></i>
+                   <i className="fa-solid fa-square text-[10px]"></i>
                  ) : (
                    <i className="fa-solid fa-arrow-up text-[12px]"></i>
                  )}

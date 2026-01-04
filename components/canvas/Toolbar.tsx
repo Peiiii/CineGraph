@@ -11,6 +11,7 @@ export const Toolbar: React.FC = () => {
 
   const tabs = [
     { id: 'all', icon: 'fa-solid fa-arrow-pointer', label: '全部资产' },
+    { id: 'character', icon: 'fa-solid fa-id-card', ai: true, label: '角色档案' },
     { id: 'text', icon: 'fa-solid fa-file-lines', label: '剧本与文字' },
     { id: 'media', icon: 'fa-regular fa-image', ai: true, label: '分镜图片' },
     { id: 'video', icon: 'fa-solid fa-film', ai: true, label: '视频动态' },
@@ -25,7 +26,7 @@ export const Toolbar: React.FC = () => {
           label={tab.label}
           hasAI={tab.ai}
           active={activeTab === tab.id}
-          onClick={() => presenter.assetManager.setActiveTab(tab.id)}
+          onClick={() => presenter.assetManager.setActiveTab(tab.id as any)}
         />
       ))}
       
@@ -34,12 +35,12 @@ export const Toolbar: React.FC = () => {
       <ActionButton 
         icon="fa-solid fa-plus" 
         title="添加资产" 
-        className="!w-11 !h-11 !rounded-[14px]"
+        className="!w-11 !h-11 !rounded-[14px] !bg-black !text-white hover:!bg-blue-600 transition-colors"
         onClick={() => presenter.assetManager.addAsset({ 
           id: Math.random().toString(36).substr(2, 9), 
-          type: 'text', 
-          title: '新建便签', 
-          content: '在此输入内容...', 
+          type: activeTab === 'character' ? 'character' : 'text', 
+          title: activeTab === 'character' ? '新建角色档案' : '新建便签', 
+          content: activeTab === 'character' ? '### 角色基本信息\n- **姓名**: \n- **外貌特征**: ' : '在此输入内容...', 
           createdAt: Date.now() 
         })} 
       />
