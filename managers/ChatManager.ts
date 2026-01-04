@@ -37,12 +37,15 @@ export class ChatManager {
   };
 
   sendMessage = async () => {
-    const { input, isTyping, setMessages, setInput, setIsTyping } = useChatStore.getState();
+    const { input, isTyping, messages, setMessages, setInput, setIsTyping } = useChatStore.getState();
     if (!input.trim() || isTyping) return;
 
     const userMsg = input.trim();
     const { assets, selectedIds } = useAssetStore.getState();
     const contextAssets = assets.filter(a => selectedIds.has(a.id));
+
+    // 保存当前历史记录副本，用于传递给 AI
+    const historySnapshot = [...messages];
 
     setInput('');
     setMessages((prev) => [
@@ -57,11 +60,11 @@ export class ChatManager {
     const signal = this.currentAbortController.signal;
 
     try {
-      const stream = await GeminiService.chatWithAgentStream(userMsg, contextAssets);
+      // 关键改进：传入 historySnapshot，让 AI 拥有“记忆”
+      const stream = await GeminiService.chatWithAgentStream(userMsg, contextAssets, historySnapshot);
       let accumulatedText = "";
 
       for await (const chunk of stream) {
-        // 检查是否已被中止
         if (signal.aborted) break;
 
         if (chunk.text) {

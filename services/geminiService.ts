@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 import { Asset } from "../types";
+import { Message } from "../stores/useChatStore";
 
 export const filmTools: FunctionDeclaration[] = [
   {
@@ -60,14 +61,28 @@ export class GeminiService {
     return new GoogleGenAI({ apiKey: process.env.API_KEY });
   }
 
-  static async chatWithAgentStream(message: string, contextAssets: Asset[]) {
+  static async chatWithAgentStream(message: string, contextAssets: Asset[], history: Message[]) {
     const ai = this.getClient();
-    // 构建资产清单，包含 ID，以便 AI 引用
+    
+    // 构建资产清单上下文
     const assetList = contextAssets.map(a => `[ID: ${a.id}] ${a.title} (${a.type})`).join('\n');
+
+    // 将历史记录转换为 Gemini 格式
+    // 注意：Gemini 要求 role 必须是 'user' 或 'model'
+    const contents = history.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
+    // 添加当前的最新消息
+    contents.push({
+      role: 'user',
+      parts: [{ text: message }]
+    });
 
     return ai.models.generateContentStream({
       model: "gemini-3-flash-preview",
-      contents: [{ role: 'user', parts: [{ text: message }] }],
+      contents: contents,
       config: {
         systemInstruction: `你是一位全能的 AI 电影导演。
         你可以：
@@ -78,8 +93,10 @@ export class GeminiService {
         当前画布资产（你可以通过 ID 引用并修改它们）：
         ${assetList || '暂无资产'}
         
-        重要：当用户要求“修改”、“润色”、“调整”或“重写”某个已有的东西时，请务必使用 update_creative_asset 并提供正确的 asset_id。
-        请保持专业、简洁。`,
+        重要规则：
+        - 始终参考之前的对话上下文。如果用户提到“它”或“刚才的”，请根据历史记录判断其意图。
+        - 当用户要求“修改”、“润色”、“调整”或“重写”某个已有的资产时，务必使用 update_creative_asset。
+        - 保持专业、简洁、富有创造力。`,
         tools: [{ functionDeclarations: filmTools }],
         thinkingConfig: { thinkingBudget: 0 }
       }
